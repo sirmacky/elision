@@ -18,7 +18,6 @@
 // - pivot test 
 // - Add TestCriteria to the test runner
 // - Create a thread local test runner
-// - Generate and run a test
 
 
 struct TestCategory;
@@ -52,6 +51,7 @@ struct TestDefinition
 	std::function<void()> _test;
 	int _lineNumber;
 	const TestCategory* _category = nullptr;
+	TestConcurrency _concurrency = TestConcurrency::Any;
 };
 
 class test_failed
@@ -296,21 +296,26 @@ namespace Tests::details
 
 #define AssertThat(condition) Tests::details::AssertCondition(condition, #condition, __FUNCTION__, __FILE__, __LINE__)
 
-
-
-
 #define ImplementTestArguments_ValueSource(...) 
 #define ImplementTestArguments_ValueCase(...) 
 #define ImplementTestArguments_Arguments(...) __VA_ARGS__
+#define ImplementTestArguments_WithRequirement(...)
 
 #define ImplementTestDataSource_ValueSource(source) .AddTestsFromSource( []() { return source ();} )
 #define ImplementTestDataSource_ValueCase(...) .AddTestsFromValues(__VA_ARGS__)
 #define ImplementTestDataSource_Arguments(...)
+#define ImplementTestDataSource_WithRequirement(...)
+
+#define ImplementTestRequirements_ValueSource(source)
+#define ImplementTestRequirements_ValueCase(...)
+#define ImplementTestRequirements_Arguments(...)
+#define ImplementTestRequirements_WithRequirement(...) .SetRequirement(__VA_ARGS__)
 
 
 #define DeclareTest(category, test_name, ...) void test_name (FOR_EACH_MACRO(ImplementTestArguments_, __VA_ARGS__)); \
 static volatile const auto* GenerateTestDeclarationName(test_name) = category->Add(TestGenerator<decltype(test_name)>(&test_name, #test_name, __FILE__, __LINE__) \
 FOR_EACH_MACRO(ImplementTestDataSource_, __VA_ARGS__) \
+FOR_EACH_MACRO(ImplementTestRequirements_, __VA_ARGS__) \
 .Generate()); \
 void test_name (FOR_EACH_MACRO(ImplementTestArguments_, __VA_ARGS__)) 
 
@@ -332,11 +337,16 @@ namespace TupleHelpers
 }
 
 
+template <typename arg>
+struct TestGenerator {};
+
+template<typename arg>
 struct TestGeneratorBase
 {
 	std::string _name;
 	std::string _file;
 	int _lineNumber;
+	TestConcurrency _concurrency = TestConcurrency::Any;
 
 	TestGeneratorBase(const std::string& name, const std::string& file, int lineNumber)
 	{
@@ -344,31 +354,42 @@ struct TestGeneratorBase
 		_file = file;
 		_lineNumber = lineNumber;
 	}
+
+	TestGenerator<arg>& SetRequirement(TestConcurrency val)
+	{
+		_concurrency = val;
+		return *(static_cast<TestGenerator<arg>*>(this));
+	}
+
+	TestDefinition GenerateTest(std::function<arg> test_func)
+	{
+		auto definition = TestDefinition(_name, _lineNumber, test_func);
+		SetRequirements(definition);
+		return definition;
+	}
+
+	void SetRequirements(TestDefinition& definition)
+	{
+		definition._concurrency = _concurrency;
+	}
 };
 
 
-// TODO: Could do an overload for no args here that would make this trivial
-template <typename arg>
-struct TestGenerator {};
-
 template <typename R>
-struct TestGenerator<R()> : public TestGeneratorBase
+struct TestGenerator<R()> : public TestGeneratorBase<R()>
 {
 	std::function<R()> _test;
 	TestGenerator(std::function<R()> test, const std::string& name, const std::string& file, int lineNumber)
-		: TestGeneratorBase(name, file, lineNumber)
+		: TestGeneratorBase<R()>(name, file, lineNumber)
 	{
 		_test = test;
 	}
 
-	TestDefinition Generate()
-	{
-		return TestDefinition(_name, _lineNumber, _test);
-	}
+	TestDefinition Generate() { return this->GenerateTest(_test); }
 };
 
 template <typename R, typename ...Args>
-struct TestGenerator<R(Args...)> : public TestGeneratorBase
+struct TestGenerator<R(Args...)> : public TestGeneratorBase<R(Args...)>
 {
 	using ArgStorage = std::tuple<Args...>;
 	using ArgVector = std::vector<ArgStorage>;
@@ -379,7 +400,7 @@ struct TestGenerator<R(Args...)> : public TestGeneratorBase
 
 	//TestGenerator((*test)(Args...), const std::string& name, const std::string& file, int lineNumber)
 	TestGenerator(std::function<void(Args...)> test, const std::string& name, const std::string& file, int lineNumber)
-		: TestGeneratorBase(name, file, lineNumber)
+		: TestGeneratorBase<R(Args...)>(name, file, lineNumber)
 	{
 		_test = test;
 	}
@@ -415,18 +436,19 @@ struct TestGenerator<R(Args...)> : public TestGeneratorBase
 		{
 			return std::apply(localTest, arguments); 
 		};
-		_tests.emplace_back(GenerateTestName(arguments), _lineNumber, instanceTest);
+		auto& test = _tests.emplace_back(GenerateTestName(arguments), this->_lineNumber, instanceTest);
+		this->SetRequirements(test);		
 		return *this;
 	}
 
 	std::unique_ptr<TestCategory> Generate()
 	{
 		assert(_tests.size() > 0);
-		return std::make_unique<TestCategory>(_name, std::move(_tests));
+		return std::make_unique<TestCategory>(this->_name, std::move(_tests));
 	}
 
 	std::string GenerateTestName(const ArgStorage& arguments) const {
-		return std::format("{0}({1})", _name, GenerateArgName(arguments));
+		return std::format("{0}({1})", this->_name, GenerateArgName(arguments));
 	}
 
 	std::string GenerateArgName(const ArgStorage& arguments) const {

@@ -1,9 +1,9 @@
 # Build results
 build/
 
-
 # Visual Studio
 .vs/
 *.vcxproj*
 
-
+# Other
+enc_temp_folder/

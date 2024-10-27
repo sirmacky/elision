@@ -71,10 +71,10 @@ namespace Tests
 		AssertThat(a != 1337);
 	}
 
-	DeclareTest(Categories::Standard, TestMultiple, 
+	DeclareTest(Categories::Standard, TestMultiple, WithRequirement(TestConcurrency::Exclusive),
 		ValueSource(Example::GenerateMultipleTupleData), 
 		ValueCase(42, 43),
-		Arguments(int a, int b))
+	Arguments(int a, int b))
 	{
 		AssertThat(a < b);
 	}
