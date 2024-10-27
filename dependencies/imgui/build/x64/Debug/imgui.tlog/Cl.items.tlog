@@ -1,0 +1,8 @@
+D:\Elision\dependencies\imgui\src\backends\imgui_impl_glfw.cpp;D:\Elision\dependencies\imgui\build\x64\Debug\imgui_impl_glfw.obj
+D:\Elision\dependencies\imgui\src\backends\imgui_impl_opengl3.cpp;D:\Elision\dependencies\imgui\build\x64\Debug\imgui_impl_opengl3.obj
+D:\Elision\dependencies\imgui\src\imgui.cpp;D:\Elision\dependencies\imgui\build\x64\Debug\imgui.obj
+D:\Elision\dependencies\imgui\src\imgui_draw.cpp;D:\Elision\dependencies\imgui\build\x64\Debug\imgui_draw.obj
+D:\Elision\dependencies\imgui\src\imgui_tables.cpp;D:\Elision\dependencies\imgui\build\x64\Debug\imgui_tables.obj
+D:\Elision\dependencies\imgui\src\imgui_widgets.cpp;D:\Elision\dependencies\imgui\build\x64\Debug\imgui_widgets.obj
+D:\Elision\dependencies\imgui\src\misc\cpp\imgui_stdlib.cpp;D:\Elision\dependencies\imgui\build\x64\Debug\imgui_stdlib.obj
+D:\Elision\dependencies\imgui\src\misc\fonts\binary_to_compressed_c.cpp;D:\Elision\dependencies\imgui\build\x64\Debug\binary_to_compressed_c.obj
