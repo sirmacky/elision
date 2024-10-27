@@ -383,28 +383,15 @@ struct TestGenerator<R(Args...)> : public TestGeneratorBase
 	{
 		_test = test;
 	}
-
-
-	// TODO: This isnt working, we may need something more advanced here
-	template<std::enable_if<sizeof...(Args) == 1>>
-	TestGenerator& AddTestsFromSource(const std::function<std::vector<Args...>()>& generator)
+	
+	TestGenerator& AddTestsFromSource(const auto& generator)
 	{
 		auto arguments = std::invoke(generator);
 		_tests.reserve(arguments.size() + _tests.size());
 		for (const auto& argument : arguments)
 		{
-			AddTestsFromValue(std::tuple(argument));
-		}
-
-		return *this;
-	}
-	
-	TestGenerator& AddTestsFromSource(const std::function<std::vector<std::tuple<Args...>>()>& generator)
-	{
-		auto arguments = std::invoke(generator);
-		_tests.reserve(arguments.size() + _tests.size());
-		for (auto& argument : arguments)
 			AddTestsFromValue(argument);
+		}
 
 		return *this;
 	}
@@ -413,6 +400,12 @@ struct TestGenerator<R(Args...)> : public TestGeneratorBase
 	{
 		auto tuple = std::make_tuple(args...);
 		return AddTestsFromValue(tuple);
+	}
+
+	template<typename T>
+	TestGenerator& AddTestsFromValue(const T& argument)
+	{
+		return AddTestsFromValue(std::tuple(argument));
 	}
 
 	TestGenerator& AddTestsFromValue(const ArgStorage& arguments)

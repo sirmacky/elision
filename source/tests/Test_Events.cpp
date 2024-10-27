@@ -53,33 +53,20 @@ namespace Example
 
 	auto GenerateMultipleTupleData()
 	{
-		return std::vector<std::tuple<int, int>>();
-		/*
 		std::vector<std::tuple<int, int>> a(10);
 		for (int i = 0; i < 10; ++i)
 			a[i] = (std::make_tuple(i, i + 10));
 		return a;
-		*/
 	}
 }
 
 namespace Tests
 {
-	/*
 	DeclareTest(Categories::Standard, TestSomething, Arguments(int a),
 		ValueSource(Example::GenerateSingleData),
 		ValueSource(Example::GenerateSingleTupleData),
 		ValueCase(42),
 		ValueCase(1337))
-		*/
-
-	void TestSomething(int a); static volatile const auto* TestSomething_test_definition = Categories::Standard->Add(TestGenerator<decltype(TestSomething)>(&TestSomething, "TestSomething", "D:\\Elision\\source\\tests\\Test_Events.cpp", 72)
-		.AddTestsFromSource([]() { return Example::GenerateSingleData(); })
-		.AddTestsFromSource([]() { return Example::GenerateSingleTupleData(); })
-		.AddTestsFromValues(42)
-		.AddTestsFromValues(1337)
-		.Generate());
-	void TestSomething(int a)
 	{
 		AssertThat(a != 1337);
 	}
