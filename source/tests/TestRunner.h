@@ -14,13 +14,14 @@
 #include <cassert>
 
 
+
 // TODO:
-// - pivot test 
-// - Add TestCriteria to the test runner
-// - Create a thread local test runner
+// Have the definitions stored in a TestDataStore rather than the manager
+// TestDefinitions should not be stored on the category itself.
+// Categories should have some way of initializing components
 
 
-struct TestCategory;
+
 
 
 enum class TestConcurrency
@@ -29,6 +30,8 @@ enum class TestConcurrency
 	Privelaged, // only run one of these at a time. 
 	Any, // this test can be run on any thread any time
 };
+
+struct TestCategory;
 
 struct TestDefinition
 {
@@ -142,6 +145,8 @@ struct TestResult
 
 struct TestCategory
 {
+	// TODO: Move this to a centralized container
+
 	std::string Name;
 	std::vector<TestDefinition> Tests;
 	std::vector<std::unique_ptr<TestCategory>> SubCategories;
@@ -163,14 +168,14 @@ struct TestCategory
 		return SubCategories.emplace_back(std::move(category)).get();
 	}
 
-	const TestDefinition* Add(const TestDefinition& instance) 
+	const TestDefinition* Add(const TestDefinition& instance)
 	{
 		Tests.push_back(instance);
 		return &Tests.back();
 	}
 
 	template<typename...Args>
-	const TestDefinition* Add(Args... args) 
+	const TestDefinition* Add(Args... args)
 	{
 		return &(Tests.emplace_back(args...));
 	}
@@ -192,10 +197,7 @@ struct TestManager
 		return &(_categories.emplace_back(name));
 	}
 
-	void OnImGui();
-	void OnImGui(const TestCategory& category);
-	void OnImGuiDetails(const TestCategory& category);
-	void OnImGui(const TestDefinition& instance);
+
 
 	void Run(const TestDefinition& definition);
 	void Run(const TestCategory& category);
@@ -211,7 +213,7 @@ struct TestManager
 	const TestResult* FetchResult(const TestDefinition* definition) const
 	{
 		return const_cast<TestManager*>(this)->EditResult(definition);
-		
+
 	}
 	TestResult* EditResult(const TestDefinition* definition)
 	{
@@ -224,17 +226,6 @@ private:
 
 	TestResultStatus DetermineStatus(const TestCategory& category) const;
 	std::unordered_map<std::string, TestResult> _testResults;
-};
-
-// given a cohort of tests, this will ensure they are all run
-struct TestCoordinator
-{
-	/*
-	void Run(std::vector<const TestDefinition&> tests)
-	{
-		// TODO:
-	}
-	*/
 };
 
 struct TestContext
@@ -275,9 +266,7 @@ struct TestRunner
 
 
 #define DeclareTestCategory(categoryName) TestCategory* categoryName = TestManager::Instance().Add(#categoryName);
-
 #define GenerateTestDeclarationName(test_name) test_name ## _test_definition
-
 
 namespace Tests::details
 {

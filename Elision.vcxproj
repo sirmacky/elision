@@ -167,16 +167,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ImGuiPanel_TestManager.cpp" />
     <ClCompile Include="source\main.cpp" />
+    <ClCompile Include="source\tests\TestCoordinator.cpp" />
     <ClCompile Include="source\tests\TestRunner.cpp" />
-    <ClCompile Include="source\tests\Test_Events.cpp" />
+    <ClCompile Include="source\tests\Test_TestFramework.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ImGuiPanel_TestManager.h" />
     <ClInclude Include="source\foundation\Events.h" />
     <ClInclude Include="source\foundation\MacroHelpers.h" />
     <ClInclude Include="source\imgui.h" />
+    <ClInclude Include="source\tests\TestCoordinator.h" />
     <ClInclude Include="source\tests\TestRunner.h" />
     <ClInclude Include="source\tests\Test_Events.h" />
+    <ClInclude Include="source\tests\Test_TestFramework.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
