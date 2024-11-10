@@ -13,49 +13,14 @@
 #include <type_traits>
 #include <cassert>
 
-
+#include "TestDefinition.h"
+#include "TestCategory.h"
 
 // TODO:
 // Have the definitions stored in a TestDataStore rather than the manager
 // TestDefinitions should not be stored on the category itself.
 // Categories should have some way of initializing components
 
-
-
-
-
-enum class TestConcurrency
-{
-	Exclusive, // This test must be run exclusively
-	Privelaged, // only run one of these at a time. 
-	Any, // this test can be run on any thread any time
-};
-
-struct TestCategory;
-
-struct TestDefinition
-{
-	TestDefinition(const std::string& name, int lineNumber, const std::function<void()>& test)
-	{
-		_id = name;
-		_name = name;
-		_lineNumber = lineNumber;
-		_test = test;
-	}
-
-	TestDefinition(TestDefinition&&) = default;
-	TestDefinition(const TestDefinition&) = default;
-	TestDefinition() = default;
-
-	// the data
-	std::string _id;
-	std::string _name;
-	std::string _file;
-	std::function<void()> _test;
-	int _lineNumber;
-	const TestCategory* _category = nullptr;
-	TestConcurrency _concurrency = TestConcurrency::Any;
-};
 
 class test_failed
 {
@@ -143,43 +108,7 @@ struct TestResult
 	operator bool() const { return HasPassed(); }
 };
 
-struct TestCategory
-{
-	// TODO: Move this to a centralized container
 
-	std::string Name;
-	std::vector<TestDefinition> Tests;
-	std::vector<std::unique_ptr<TestCategory>> SubCategories;
-
-	TestCategory(const std::string& name) {
-		Name = name;
-	}
-
-	TestCategory(const std::string& name, std::vector<TestDefinition>&& tests)
-	{
-		Name = name;
-		Tests = std::move(tests);
-	}
-
-	bool IsEmpty() const { return (Tests.size() + SubCategories.size()) == 0; }
-
-	const TestCategory* Add(std::unique_ptr<TestCategory>&& category)
-	{
-		return SubCategories.emplace_back(std::move(category)).get();
-	}
-
-	const TestDefinition* Add(const TestDefinition& instance)
-	{
-		Tests.push_back(instance);
-		return &Tests.back();
-	}
-
-	template<typename...Args>
-	const TestDefinition* Add(Args... args)
-	{
-		return &(Tests.emplace_back(args...));
-	}
-};
 
 
 struct TestManager
@@ -196,8 +125,6 @@ struct TestManager
 	{
 		return &(_categories.emplace_back(name));
 	}
-
-
 
 	void Run(const TestDefinition& definition);
 	void Run(const TestCategory& category);

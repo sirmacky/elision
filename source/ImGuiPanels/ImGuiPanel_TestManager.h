@@ -2,8 +2,8 @@
 
 #include "ImGuiPanel.h"
 
-class TestCategory;
-class TestDefinition;
+struct TestCategory;
+struct TestDefinition;
 
 
 class ImGuiPanel_TestManager : public ImGuiPanel

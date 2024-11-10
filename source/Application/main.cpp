@@ -3,11 +3,13 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "imgui.h"
+#include "foundation/imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-#include "tests/TestRunner.h"
+#include "TestFramework/TestRunner.h"
+
+#include "ImGuiPanels/ImGuiPanel_TestManager.h"
 
 ImplementXEnum(TestEnum,
     XValue(value1),
@@ -124,7 +126,7 @@ int main()
             
                 open = !open && ImGui::Button("Re-open");
 
-                TestManager::Instance().OnImGui();
+                //TestManager::Instance().OnImGui();
                 
             }
             ImGui::End();

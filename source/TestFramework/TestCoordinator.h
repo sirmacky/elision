@@ -15,7 +15,7 @@
 #include <array>
 #include <span>
 
-class TestDefinition;
+#include "TestDefinition.h"
 
 struct TestCoordinator
 {
