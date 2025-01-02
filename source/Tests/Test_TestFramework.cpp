@@ -84,3 +84,31 @@ namespace Tests
 		AssertThat(1 > 0);
 	}
 }
+
+DeclareTestCategoryV2(Standard)
+{
+	// This will allow us to set up common start and teardown operations
+	// as well as a single setup function
+
+	DeclareTestV2(TestSomething, Arguments(int a),
+		ValueSource(Example::GenerateSingleData),
+		ValueSource(Example::GenerateSingleTupleData),
+		ValueCase(42),
+		ValueCase(1337))
+	{
+		AssertThat(a != 1337);
+	}
+
+	DeclareTestV2(TestMultiple, WithRequirement(TestConcurrency::Exclusive),
+		ValueSource(Example::GenerateMultipleTupleData),
+		ValueCase(42, 43),
+		Arguments(int a, int b))
+	{
+		AssertThat(a < b);
+	}
+
+	DeclareTestV2(TestSomethingWithNoArgs)
+	{
+		AssertThat(1 > 0);
+	}
+}

@@ -21,7 +21,6 @@
 // TestDefinitions should not be stored on the category itself.
 // Categories should have some way of initializing components
 
-
 class test_failed
 {
 public:
@@ -61,8 +60,8 @@ ImplementXEnum(TestResultStatus,
 
 struct TestResult
 {
-	std::chrono::nanoseconds _timeStarted;
-	std::chrono::nanoseconds _timeEnded;
+	std::chrono::nanoseconds _timeStarted{ 0 };
+	std::chrono::nanoseconds _timeEnded{ 0 };
 	std::optional<test_failed> _lastFailure;
 
 	void Reset()
@@ -107,8 +106,6 @@ struct TestResult
 
 	operator bool() const { return HasPassed(); }
 };
-
-
 
 
 struct TestManager
@@ -234,6 +231,9 @@ FOR_EACH_MACRO(ImplementTestDataSource_, __VA_ARGS__) \
 FOR_EACH_MACRO(ImplementTestRequirements_, __VA_ARGS__) \
 .Generate()); \
 inline static void test_name (FOR_EACH_MACRO(ImplementTestArguments_, __VA_ARGS__)) 
+
+#define DeclareTestCategoryV2(name) namespace name { DeclareTestCategory(Category); } namespace name
+#define DeclareTestV2(...) DeclareTest( Category, __VA_ARGS__)
 
 namespace TupleHelpers
 {
