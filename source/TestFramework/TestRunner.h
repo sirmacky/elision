@@ -233,7 +233,7 @@ static volatile const auto* GenerateTestDeclarationName(test_name) = category->A
 FOR_EACH_MACRO(ImplementTestDataSource_, __VA_ARGS__) \
 FOR_EACH_MACRO(ImplementTestRequirements_, __VA_ARGS__) \
 .Generate()); \
-void test_name (FOR_EACH_MACRO(ImplementTestArguments_, __VA_ARGS__)) 
+inline static void test_name (FOR_EACH_MACRO(ImplementTestArguments_, __VA_ARGS__)) 
 
 namespace TupleHelpers
 {

@@ -1,7 +1,5 @@
 #include "ImGuiPanel_TestManager.h"
-#include "Foundation/imgui.h"
-#include "TestFramework/TestRunner.h"
-
+#include "foundation/imgui.h"
 #include <algorithm>
 
 constexpr ImVec4 TestPassedColor{ 0.2f, 0.84f, 0.2f, 1.0f };
@@ -20,7 +18,7 @@ constexpr ImVec4 ToColor(TestResultStatus status)
 
 void ImGuiPanel_TestManager::OnImGui()
 {
-	for (const auto& category : TestManager::Instance()._categories)
+	for (const auto& category : _categories)
 		OnImGui(category);
 }
 
@@ -31,7 +29,7 @@ void ImGuiPanel_TestManager::OnImGui(const TestCategory& category)
 		ImGui::SameLine();
 		if (ImGui::Button("Run"))
 		{
-			TestManager::Instance().Run(category);
+			Run(category);
 		}
 		OnImGuiDetails(category);
 	}
@@ -55,7 +53,7 @@ void ImGuiPanel_TestManager::OnImGui(const TestDefinition& definition)
 	auto scope = ImGui::Scoped::TreeNode(definition._name.c_str());
 	auto idScope = ImGui::Scoped::Id(definition._name);
 
-	const auto* result = TestManager::Instance().FetchResult(&definition);
+	const auto* result = FetchResult(&definition);
 	auto status = result->Status();
 
 	ImGui::SameLine();
@@ -64,7 +62,7 @@ void ImGuiPanel_TestManager::OnImGui(const TestDefinition& definition)
 	ImGui::SameLine();
 	if (ImGui::Button("Run"))
 	{
-		TestManager::Instance().Run(definition);
+		Run(definition);
 	}
 
 	if (scope)
