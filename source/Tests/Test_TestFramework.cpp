@@ -85,7 +85,7 @@ namespace Tests
 	}
 }
 
-DeclareTestCategoryV2(Standard)
+DeclareTestCategoryV2(StandardV2)
 {
 	// This will allow us to set up common start and teardown operations
 	// as well as a single setup function

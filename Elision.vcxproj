@@ -20,12 +20,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Application\main.cpp" />
+    <ClCompile Include="source\Application\Services\ImGuiService.cpp" />
     <ClCompile Include="source\ImGuiPanels\ImGuiPanel_TestManager.cpp" />
     <ClCompile Include="source\TestFramework\TestCoordinator.cpp" />
     <ClCompile Include="source\TestFramework\TestRunner.cpp" />
     <ClCompile Include="source\Tests\Test_TestFramework.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\Application\Services\ImGuiService.h" />
     <ClInclude Include="source\foundation\Events.h" />
     <ClInclude Include="source\foundation\imgui.h" />
     <ClInclude Include="source\foundation\MacroHelpers.h" />

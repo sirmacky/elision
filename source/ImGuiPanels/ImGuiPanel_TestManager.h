@@ -5,7 +5,6 @@
 struct TestCategory;
 struct TestDefinition;
 
-
 class ImGuiPanel_TestManager : public ImGuiPanel
 {
 public:
@@ -15,4 +14,3 @@ protected:
 	void OnImGuiDetails(const TestCategory& category);
 	void OnImGui(const TestDefinition& instance);
 };
-
