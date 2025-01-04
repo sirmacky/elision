@@ -17,8 +17,19 @@
 
 #include "TestDefinition.h"
 
+
 struct TestCoordinator
 {
+	enum class Status
+	{
+		Idle,
+		Running,
+		Cancelling,
+	};
+
+	Status _status = Status::Idle;
+
+	// TODO: make configurable
 	const int MaxNumberOfThreads = 4;
 	const int MinimumNumberOfTestsPerThread = 100;
 	const float Variance = 0.5f;
@@ -29,7 +40,7 @@ struct TestCoordinator
 	bool _forceMainThread = false;
 
 	void Run(std::vector<const TestDefinition*> tests);
-	void Cancel() {} // TODO:
+	void Cancel();
 
 	void RunAsync(std::span<const TestDefinition* const> tests);
 

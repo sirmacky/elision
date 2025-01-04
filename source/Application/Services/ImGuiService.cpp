@@ -45,7 +45,7 @@ ImGuiService::ImGuiService()
 
 void ImGuiService::OnImGui()
 {
-    // TODO: 
+    // TODO: proper controls here
     bool open = true;
     for (auto& ptr : Panels)
     {
