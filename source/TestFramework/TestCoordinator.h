@@ -15,9 +15,13 @@
 #include <array>
 #include <span>
 
+#include <thread>
+#include <latch>
+
 #include "TestDefinition.h"
+#include "unordered_set"
 
-
+class TestContext;
 struct TestCoordinator
 {
 	enum class Status
@@ -25,24 +29,35 @@ struct TestCoordinator
 		Idle,
 		Running,
 		Cancelling,
+		Done,
 	};
 
-	Status _status = Status::Idle;
+	Status Status = Status::Idle;
 
 	// TODO: make configurable
-	const int MaxNumberOfThreads = 4;
-	const int MinimumNumberOfTestsPerThread = 100;
-	const float Variance = 0.5f;
+	void ForceOntoMainThread() { MaxNumberOfSimultaneousThreads = 0; }
+	int MaxNumberOfSimultaneousThreads = 4;
+	int MinimumNumberOfTestsPerThread = 100;
+	float Variance = 0.5f;
 
 	// allows us to enforce the concurrency type if there are problems
 	std::optional<TestConcurrency> _maximumConcurrency;
 	std::optional<TestConcurrency> _enforcedConcurrency;
-	bool _forceMainThread = false;
+
+	TestCoordinator()
 
 	void Run(std::vector<const TestDefinition*> tests);
 	void Cancel();
 
-	void RunAsync(std::span<const TestDefinition* const> tests);
+	void RunAsyncWhenReady(std::span<const TestDefinition* const> tests, std::latch& latch);
+	void RunAsyncThenDecrement(std::span<const TestDefinition* const> tests, std::latch& latch);
 
+	static void RunTests(std::span<const TestDefinition* const> tests, std::stop_token token);
 	static void RunTest(const TestDefinition* definition);
+
+	static void PublishResult(const TestContext& context);
+
+	std::array<std::vector<const TestDefinition*>, static_cast<int>(TestConcurrency::Count)> _cohorts;
+	std::vector<std::jthread> _threads;
+	std::latch ExclusiveLatch;
 };

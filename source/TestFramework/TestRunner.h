@@ -214,12 +214,12 @@ namespace Tests::details
 #define ImplementTestArguments_Arguments(...) __VA_ARGS__
 #define ImplementTestArguments_WithRequirement(...)
 
-#define ImplementTestDataSource_ValueSource(source) .AddTestsFromSource( []() { return source ();} )
+#define ImplementTestDataSource_ValueSource(...) .AddTestsFromSource( []() { return __VA_ARGS__ ();} )
 #define ImplementTestDataSource_ValueCase(...) .AddTestsFromValues(__VA_ARGS__)
 #define ImplementTestDataSource_Arguments(...)
 #define ImplementTestDataSource_WithRequirement(...)
 
-#define ImplementTestRequirements_ValueSource(source)
+#define ImplementTestRequirements_ValueSource(...)
 #define ImplementTestRequirements_ValueCase(...)
 #define ImplementTestRequirements_Arguments(...)
 #define ImplementTestRequirements_WithRequirement(...) .SetRequirement(__VA_ARGS__)

@@ -1,19 +1,8 @@
 
-#include <vector>
-#include <array>
+#include "TestFramework/TestRunner.h"
+
 #include <memory>
 
-#include "Test_TestFramework.h"
-
-#include "../foundation/Events.h"
-
-// A Harness can be used to set things up in a test
-// for all tests
-// per test run
-// pet test instance rum
-
-// and can clean up each in between
-#include "TestFramework/TestRunner.h"
 
 namespace Tests::Categories
 {
@@ -87,14 +76,13 @@ namespace Tests
 
 DeclareTestCategoryV2(StandardV2)
 {
-	// This will allow us to set up common start and teardown operations
-	// as well as a single setup function
+	
 	DeclareTestV2(TestSomething,
 		ValueSource(Example::GenerateSingleData),
 		ValueSource(Example::GenerateSingleTupleData),
 		ValueCase(42),
 		ValueCase(1337),
-	Arguments(int a))
+		Arguments(int a))
 	{
 		AssertThat(a != 1337);
 	}
@@ -115,7 +103,9 @@ DeclareTestCategoryV2(StandardV2)
 
 
 // TODO: V3
-// OPTION 1
+// The category should be able to specify the default concurrency of the tests
+ 
+// RESOURCES OPTION 1
 // in order to speed up tests there may be test dependencies that a test may want. 
 // such as loading a shared resource, or something
 // the cateogry should be responsible for providing and tearing down this data
@@ -130,11 +120,13 @@ DeclareTestCategoryV2(StandardV2)
 
 DeclareTestCategoryV3(TestsV3)
 {
+	// This will allow us to set up common start and teardown operations
+	// as well as a single setup function
 	DeclareTestCategorySetup() { }
 	DeclareTestCategoryTeardown() { }
 }
 
-// OPTION 2
+// RESOURCES OPTION 2
 // its possible multiple items may want to load data
 // so we may need to develop a dependency graph for them
 // execution of the tests is also a dependency graph in a way
@@ -148,9 +140,7 @@ struct Dependency
 
 	template<typename...Args>
 	Dependency(Args&&... args)
-	{
-		Dependencies.push_back(args...)
-	}
+	{}
 	Dependency() = default;
 
 	// Resolve will be called when all dependncies are ready.
