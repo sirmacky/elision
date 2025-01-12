@@ -33,32 +33,32 @@ namespace Tests::ValueSources
 	}
 }
 
-DeclareTestCategoryV2(TestCoordinator)
+DeclareTestCategory(TestCoordinator)
 {
 	using namespace std::chrono_literals;
 
-	DeclareTestV2(ExclusiveSleeps, WithRequirement(TestConcurrency::Exclusive),
+	DeclareTest(ExclusiveSleeps,  WithRequirement(TestConcurrency::Exclusive), 
 		ValueSource(Tests::ValueSources::IntegerRange<1,20>),
 		Arguments(int _))
 	{
 		std::this_thread::sleep_for(1s);
 	}
 
-	DeclareTestV2(PrivelagedSleeps, WithRequirement(TestConcurrency::Privelaged),
+	DeclareTest(PrivelagedSleeps, WithRequirement(TestConcurrency::Privelaged),
 		ValueSource(Tests::ValueSources::IntegerRange<1, 20>),
 		Arguments(int _))
 	{
 		std::this_thread::sleep_for(1s);
 	}
 
-	DeclareTestV2(AnySleeps, WithRequirement(TestConcurrency::Any),
+	DeclareTest(AnySleeps, WithRequirement(TestConcurrency::Any),
 		ValueSource(Tests::ValueSources::IntegerRange<1, 100>),
 		Arguments(int _))
 	{
 		std::this_thread::sleep_for(1s);
 	}
 
-	DeclareTestV2(InititeLoading)
+	DeclareTest(InfiniteLoading, Timeout(8s))
 	{
 		while (true) {}
 	}

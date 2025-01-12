@@ -42,9 +42,9 @@ public:
 		return (os << dt.FormattedString());
 	}
 
-	const std::string& error() const { return _error; }
-	const std::string& filename() const { return _filename; }
-	int linenumber() const { return _errorLine; }
+	inline const std::string& error() const { return _error; }
+	inline const std::string& filename() const { return _filename; }
+	inline int linenumber() const { return _errorLine; }
 
 private:
 
@@ -152,44 +152,8 @@ private:
 	std::unordered_map<std::string, TestResult> _testResults;
 };
 
-struct TestContext
-{
-	const TestDefinition* Definition;
-	TestResult* Result;
-};
-
-// This will run a test for a single thread
-struct TestRunner
-{
-	static void Run(TestContext context)
-	{
-		context.Result->Reset();
-
-		try
-		{
-			context.Result->Begin(std::chrono::high_resolution_clock::now().time_since_epoch());
-			std::invoke(context.Definition->_test);
-		}
-		catch (test_failed failure)
-		{
-			context.Result->SetFailure(failure);
-			// TODO:
-		}
-		catch (std::exception unexpected_failure)
-		{
-			context.Result->SetFailure(test_failed(unexpected_failure.what(), context.Definition->_file, context.Definition->_lineNumber));
-		}
-		catch (...) // unknown failure
-		{
-			context.Result->SetFailure(test_failed("uknown exception encountered", context.Definition->_file, context.Definition->_lineNumber));
-		}
-
-		context.Result->End(std::chrono::high_resolution_clock::now().time_since_epoch());
-	}
-};
 
 
-#define DeclareTestCategory(categoryName) TestCategory* categoryName = TestManager::Instance().Add(#categoryName);
 #define GenerateTestDeclarationName(test_name) test_name ## _test_definition
 
 namespace Tests::details
@@ -213,27 +177,30 @@ namespace Tests::details
 #define ImplementTestArguments_ValueCase(...) 
 #define ImplementTestArguments_Arguments(...) __VA_ARGS__
 #define ImplementTestArguments_WithRequirement(...)
+#define ImplementTestArguments_Timeout(...)
 
 #define ImplementTestDataSource_ValueSource(...) .AddTestsFromSource( []() { return __VA_ARGS__ ();} )
 #define ImplementTestDataSource_ValueCase(...) .AddTestsFromValues(__VA_ARGS__)
 #define ImplementTestDataSource_Arguments(...)
 #define ImplementTestDataSource_WithRequirement(...)
+#define ImplementTestDataSource_Timeout(...)
 
 #define ImplementTestRequirements_ValueSource(...)
 #define ImplementTestRequirements_ValueCase(...)
 #define ImplementTestRequirements_Arguments(...)
 #define ImplementTestRequirements_WithRequirement(...) .SetRequirement(__VA_ARGS__)
+#define ImplementTestRequirements_Timeout(...) .SetTimeout(__VA_ARGS__)
 
 
-#define DeclareTest(category, test_name, ...) void test_name (FOR_EACH_MACRO(ImplementTestArguments_, __VA_ARGS__)); \
+#define DeclareTest_Internal(category, test_name, ...) void test_name (FOR_EACH_MACRO(ImplementTestArguments_, __VA_ARGS__)); \
 static volatile const auto* GenerateTestDeclarationName(test_name) = category->Add(TestGenerator<decltype(test_name)>(&test_name, #test_name, __FILE__, __LINE__) \
 FOR_EACH_MACRO(ImplementTestDataSource_, __VA_ARGS__) \
 FOR_EACH_MACRO(ImplementTestRequirements_, __VA_ARGS__) \
 .Generate()); \
 inline static void test_name (FOR_EACH_MACRO(ImplementTestArguments_, __VA_ARGS__)) 
 
-#define DeclareTestCategoryV2(name) namespace name { DeclareTestCategory(Category); } namespace name
-#define DeclareTestV2(...) DeclareTest( Category, __VA_ARGS__)
+#define DeclareTestCategory(name) namespace name { TestCategory* Category = TestManager::Instance().Add(#name); } namespace name
+#define DeclareTest(...) DeclareTest_Internal( Category, __VA_ARGS__)
 
 namespace TupleHelpers
 {
@@ -263,6 +230,7 @@ struct TestGeneratorBase
 	std::string _file;
 	int _lineNumber;
 	TestConcurrency _concurrency = TestConcurrency::Any;
+	std::chrono::milliseconds _timeout{ 0 };
 
 	TestGeneratorBase(const std::string& name, const std::string& file, int lineNumber)
 	{
@@ -277,6 +245,12 @@ struct TestGeneratorBase
 		return *(static_cast<TestGenerator<arg>*>(this));
 	}
 
+	TestGenerator<arg>& SetTimeout(std::chrono::duration timeout)
+	{
+		_timeout = timeout;
+		return *(static_cast<TestGenerator<arg>*>(this));
+	}
+
 	TestDefinition GenerateTest(std::function<arg> test_func)
 	{
 		auto definition = TestDefinition(_name, _lineNumber, test_func);
@@ -287,6 +261,7 @@ struct TestGeneratorBase
 	void SetRequirements(TestDefinition& definition)
 	{
 		definition._concurrency = _concurrency;
+		definition._timeout = _timeout;
 	}
 };
 

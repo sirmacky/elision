@@ -3,25 +3,6 @@
 
 #include <memory>
 
-
-namespace Tests::Categories
-{
-	DeclareTestCategory(Standard);
-}
-
-namespace Tests
-{
-	DeclareTest(Categories::Standard, Success) 
-	{
-		AssertThat(1 > 0);
-	}
-
-	DeclareTest(Categories::Standard, Failure)
-	{
-		AssertThat(1 == 0);
-	}
-}
-
 namespace Example
 {
 	auto GenerateSingleData()
@@ -49,35 +30,10 @@ namespace Example
 	}
 }
 
-namespace Tests
+
+DeclareTestCategory(Standard)
 {
-	DeclareTest(Categories::Standard, TestSomething, Arguments(int a),
-		ValueSource(Example::GenerateSingleData),
-		ValueSource(Example::GenerateSingleTupleData),
-		ValueCase(42),
-		ValueCase(1337))
-	{
-		AssertThat(a != 1337);
-	}
-
-	DeclareTest(Categories::Standard, TestMultiple, WithRequirement(TestConcurrency::Exclusive),
-		ValueSource(Example::GenerateMultipleTupleData), 
-		ValueCase(42, 43),
-	Arguments(int a, int b))
-	{
-		AssertThat(a < b);
-	}
-
-	DeclareTest(Categories::Standard, TestSomethingWithNoArgs)
-	{
-		AssertThat(1 > 0);
-	}
-}
-
-DeclareTestCategoryV2(StandardV2)
-{
-	
-	DeclareTestV2(TestSomething,
+	DeclareTest(TestSomething,
 		ValueSource(Example::GenerateSingleData),
 		ValueSource(Example::GenerateSingleTupleData),
 		ValueCase(42),
@@ -87,7 +43,7 @@ DeclareTestCategoryV2(StandardV2)
 		AssertThat(a != 1337);
 	}
 
-	DeclareTestV2(TestMultiple, WithRequirement(TestConcurrency::Exclusive),
+	DeclareTest(TestMultiple, WithRequirement(TestConcurrency::Exclusive),
 		ValueSource(Example::GenerateMultipleTupleData),
 		ValueCase(42, 43),
 		Arguments(int a, int b))
@@ -95,7 +51,7 @@ DeclareTestCategoryV2(StandardV2)
 		AssertThat(a < b);
 	}
 
-	DeclareTestV2(TestSomethingWithNoArgs)
+	DeclareTest(TestSomethingWithNoArgs)
 	{
 		AssertThat(1 > 0);
 	}
@@ -104,6 +60,7 @@ DeclareTestCategoryV2(StandardV2)
 
 // TODO: V3
 // The category should be able to specify the default concurrency of the tests
+// Tests should support a timeout
  
 // RESOURCES OPTION 1
 // in order to speed up tests there may be test dependencies that a test may want. 

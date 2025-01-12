@@ -2,6 +2,7 @@
 
 #include <string>
 #include <functional>
+#include <chrono>
 
 enum class TestConcurrency
 {
@@ -35,4 +36,5 @@ struct TestDefinition
 	int _lineNumber;
 	const TestCategory* _category = nullptr;
 	TestConcurrency _concurrency = TestConcurrency::Any;
+	std::chrono::milliseconds _timeout{ 0 }; // default timeout
 };
