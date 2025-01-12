@@ -22,6 +22,10 @@ void TestManager::Run(const TestDefinition& test)
 
 void TestManager::Run(const TestCategory& category)
 {
-	std::unordered_set<const TestDefinition*> tests(category.Tests.begin(), category.Tests.end());
-	TestRunner::Run(tests);
+	std::unordered_set<const TestDefinition*> tests;
+	category.VisitAllTests([&](const TestDefinition* test) {tests.insert(test); });
+	
+	TestRunner _runner;
+	_runner.Run(tests);
+	_runner.Join();
 }

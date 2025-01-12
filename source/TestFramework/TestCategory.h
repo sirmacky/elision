@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <functional>
 
 struct TestCategory
 {
@@ -41,4 +42,14 @@ struct TestCategory
 	{
 		return &(Tests.emplace_back(args...));
 	}
+
+	void VisitAllTests(std::function<void(const TestDefinition*)> visitor) const
+	{ 
+		for (const auto& test : Tests)
+			std::invoke(visitor, &test);
+
+		for (const auto& category : SubCategories)
+			category->VisitAllTests(visitor);
+	}
+
 };

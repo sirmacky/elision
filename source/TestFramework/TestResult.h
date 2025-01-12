@@ -1,7 +1,16 @@
 #pragma once
 
+#include <chrono>
+#include <string>
+#include <format>
+
 // TODO: Remove and use an expose macro for the imgui
 #include <XEnum.h>
+ImplementXEnum(TestResultStatus,
+	XValue(Passed),
+	XValue(NotRun),
+	XValue(Failed))
+
 
 class test_failure
 {
@@ -35,11 +44,7 @@ private:
 	int _errorLine;
 };
 
-// TODO: Remove and use an expose macro for the imgui
-ImplementXEnum(TestResultStatus,
-	XValue(Passed),
-	XValue(NotRun),
-	XValue(Failed))
+
 
 struct TestResult
 {

@@ -43,14 +43,13 @@ class test_failure;
 
 struct TestContext
 {
-	const ExecutionOptions* Options;
 	const TestDefinition* Definition;
 	TestResult* Result;
 
 	void SetFailure(const std::string& reason);
 	void SetFailure(const test_failure& failure);
 
-	std::chrono::milliseconds DetermineTimeout() const;
+	std::chrono::milliseconds DetermineTimeout(const ExecutionOptions& options) const;
 };
 
 // TODO: the test runner should work on contexts
@@ -71,7 +70,7 @@ struct TestRunner
 
 	void Run(std::unordered_set<const TestDefinition*> tests, const ExecutionOptions& options = ExecutionOptions());
 	void Cancel();
-	void Block();
+	void Join();
 
 	std::stop_source _stopSource{};
 	std::thread _thread;
@@ -79,6 +78,6 @@ struct TestRunner
 	static void Run(std::unordered_set<const TestDefinition*> tests, const ExecutionOptions& options, std::stop_token token);
 	static void RunAsync(std::span<const TestDefinition* const> tests, const ExecutionOptions& options, std::stop_token token);
 	static void Run(const TestDefinition* const definition, const ExecutionOptions& option = ExecutionOptions());
-	static void Run(TestContext context);
+	static void Run(TestContext context, const ExecutionOptions& option = ExecutionOptions());
 	static void RunWithoutTimeout(TestContext context);
 };

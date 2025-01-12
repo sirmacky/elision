@@ -25,20 +25,16 @@ void TestContext::SetFailure(const test_failure& reason)
 	Result->SetFailure(reason);
 }
 
-std::chrono::milliseconds TestContext::DetermineTimeout() const
+std::chrono::milliseconds TestContext::DetermineTimeout(const ExecutionOptions& options) const
 {
 	using namespace std::chrono_literals;
 
 	auto timeout = Definition->_timeout;
 	if (timeout <= 0ms)
-	{
-		timeout = Options->DefaultTimeOut;
-	}
+		timeout = options.DefaultTimeOut;
 
-	if (Options->MaximumTimeout.has_value())
-	{
-		timeout = std::min(timeout, Options->MaximumTimeout.value());
-	}
+	if (options.MaximumTimeout.has_value())
+		timeout = std::min(timeout, options.MaximumTimeout.value());
 
 	return timeout;
 }
@@ -158,7 +154,7 @@ void TestRunner::Cancel()
 	Status = Status::Idle;
 }
 
-void TestRunner::Block()
+void TestRunner::Join()
 {
 	if (_thread.joinable())
 		_thread.join();
@@ -178,10 +174,10 @@ void TestRunner::RunAsync(std::span<const TestDefinition* const> tests, const Ex
 void TestRunner::Run(const TestDefinition* const definition, const ExecutionOptions& options)
 {
 	TestResult result;
-	TestRunner::Run({ &options, definition, &result });
+	TestRunner::Run({definition, &result }, options);
 }
 
-void TestRunner::Run(TestContext context)
+void TestRunner::Run(TestContext context, const ExecutionOptions& options)
 {
 	// TODO: Find a better way of doing this
 
@@ -190,7 +186,7 @@ void TestRunner::Run(TestContext context)
 	auto future = std::async(std::launch::async, &std::thread::join, &thr);
 
 	// if we're cancelled then this will execute fairly quiickly if possible.
-	auto timeout = context.DetermineTimeout();
+	auto timeout = context.DetermineTimeout(options);
 	if (future.wait_for(timeout) == std::future_status::timeout)
 	{
 		context.SetFailure(std::format("exceeded timeout duration of {}", timeout));

@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "TestResult.h"
 #include "TestDefinition.h"
@@ -31,11 +32,10 @@ struct TestManager
 	void Run(const TestCategory& category);
 	//void Run(const std::vector<const TestDefinition&>& tests);
 
-	// TODO: Set?
-	std::vector<const TestDefinition*> Query()
+	std::unordered_set<const TestDefinition*> Query()
 	{
 		// TODO: Support a string based query to query definition to get the test definitions
-		return std::vector<const TestDefinition*>();
+		return std::unordered_set<const TestDefinition*>();
 	}
 
 	const TestResult* FetchResult(const TestDefinition* definition) const
