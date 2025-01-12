@@ -42,6 +42,9 @@
     <ClCompile Include="source\Tests\Test_TestCoordinator.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="source\TestFramework\TestManager.cpp">
+      <Filter>TestFramework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\foundation\Events.h">
@@ -73,6 +76,12 @@
     </ClInclude>
     <ClInclude Include="source\Application\Services\ImGuiService.h">
       <Filter>Application\Services</Filter>
+    </ClInclude>
+    <ClInclude Include="source\TestFramework\TestResult.h">
+      <Filter>TestFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="source\TestFramework\TestManager.h">
+      <Filter>TestFramework</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

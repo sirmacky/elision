@@ -14,12 +14,11 @@
 #include <vector>
 #include <array>
 #include <span>
+#include <unordered_set>
 
 #include <thread>
-#include <latch>
 
 #include "TestDefinition.h"
-#include "unordered_set"
 
 
 struct ExecutionOptions
@@ -38,8 +37,27 @@ struct ExecutionOptions
 	std::optional<std::chrono::milliseconds> MaximumTimeout;
 };
 
-class TestContext;
-struct TestCoordinator
+
+struct TestResult;
+class test_failure;
+
+struct TestContext
+{
+	const ExecutionOptions* Options;
+	const TestDefinition* Definition;
+	TestResult* Result;
+
+	void SetFailure(const std::string& reason);
+	void SetFailure(const test_failure& failure);
+
+	std::chrono::milliseconds DetermineTimeout() const;
+};
+
+// TODO: the test runner should work on contexts
+// TODO: the TestContext should not have the options on it.
+
+// This will run a test for a single thread
+struct TestRunner
 {
 	enum class Status
 	{
@@ -51,50 +69,16 @@ struct TestCoordinator
 
 	Status Status = Status::Idle;
 
-	// TODO: make configurable
-	TestCoordinator(std::vector<const TestDefinition*> tests, const ExecutionOptions& options = ExecutionOptions());
-
+	void Run(std::unordered_set<const TestDefinition*> tests, const ExecutionOptions& options = ExecutionOptions());
 	void Cancel();
+	void Block();
 
-	void RunAsyncWhenReady(std::span<const TestDefinition* const> tests, std::latch& latch);
-	void RunAsyncThenDecrement(std::span<const TestDefinition* const> tests, std::latch& latch);
-	void RunAsync(std::span<const TestDefinition* const> tests);
+	std::stop_source _stopSource{};
+	std::thread _thread;
 
-	static void RunTests(std::span<const TestDefinition* const> tests, std::stop_token token);
-	static void RunTest(const TestDefinition* definition);
-
-	static void PublishResult(const TestContext& context);
-
-	// todo: make an unordered set?
-	// can you take a span of an unordered set? probably not.
-	std::vector<const TestDefinition*> _tests;
-	std::array<std::vector<const TestDefinition*>, static_cast<int>(TestConcurrency::Count)> _cohorts;
-	std::vector<std::jthread> _threads;
-};
-
-
-struct TestResult;
-class test_failed;
-struct TestContext
-{
-	const ExecutionOptions* Options;
-	const TestDefinition* Definition;
-	TestResult* Result;
-
-	void SetFailure(const std::string& reason);
-	void SetFailure(const test_failed& failure);
-
-	std::chrono::milliseconds DetermineTimeout() const;
-};
-
-// This will run a test for a single thread
-struct TestRunner
-{
-	TestRunner(std::vector<const TestDefinition*> tests, const ExecutionOptions& options = ExecutionOptions());
-
-	bool TryRunNextTest(std::atomic<size_t>& workIndex, std::vector<const TestDefinition*>& testPool);
-
-	static void Run(std::span<const TestDefinition* const> tests, const ExecutionOptions& options, std::stop_token token);
-	static void RunAsync(TestContext context);
+	static void Run(std::unordered_set<const TestDefinition*> tests, const ExecutionOptions& options, std::stop_token token);
+	static void RunAsync(std::span<const TestDefinition* const> tests, const ExecutionOptions& options, std::stop_token token);
+	static void Run(const TestDefinition* const definition, const ExecutionOptions& option = ExecutionOptions());
 	static void Run(TestContext context);
+	static void RunWithoutTimeout(TestContext context);
 };

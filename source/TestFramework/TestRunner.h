@@ -4,10 +4,9 @@
 #include <string>
 #include <functional>
 #include <optional>
-#include <XEnum.h>
+
 #include <iostream>
 #include <format>
-#include <unordered_map>
 #include <chrono>
 #include <tuple>
 #include <type_traits>
@@ -15,143 +14,8 @@
 
 #include "TestDefinition.h"
 #include "TestCategory.h"
-
-// TODO:
-// Have the definitions stored in a TestDataStore rather than the manager
-// TestDefinitions should not be stored on the category itself.
-// Categories should have some way of initializing components
-
-class test_failed
-{
-public:
-	test_failed() = default;
-	test_failed(const test_failed&) = default;
-
-	test_failed(const std::string& error, const std::string& filename, int errorLine)
-	{
-		_error = error;
-		_filename = filename;
-		_errorLine = errorLine;
-	}
-
-	std::string FormattedString() const {
-		return std::format("{0} in {1}:{2}", _error, _filename, _errorLine);
-	}
-
-	friend std::ostream& operator<<(std::ostream& os, const test_failed& dt) {
-		return (os << dt.FormattedString());
-	}
-
-	inline const std::string& error() const { return _error; }
-	inline const std::string& filename() const { return _filename; }
-	inline int linenumber() const { return _errorLine; }
-
-private:
-
-	std::string _error;
-	std::string _filename;
-	int _errorLine;
-};
-
-ImplementXEnum(TestResultStatus,
-	XValue(Passed),
-	XValue(NotRun),
-	XValue(Failed))
-
-struct TestResult
-{
-	std::chrono::nanoseconds _timeStarted{ 0 };
-	std::chrono::nanoseconds _timeEnded{ 0 };
-	std::optional<test_failed> _lastFailure;
-
-	void Reset()
-	{
-		_lastFailure.reset();
-		_timeEnded = {};
-		_timeStarted = {};
-	}
-
-	void Begin(std::chrono::nanoseconds timeStarted) {
-		_timeStarted = timeStarted;
-	}
-
-	void SetFailure(const test_failed& failure)
-	{
-		_lastFailure = failure;
-	}
-
-	void End(std::chrono::nanoseconds timeEnded) {
-		_timeEnded = timeEnded;
-	}
-
-	std::chrono::nanoseconds TimeTaken() const {
-		return _timeEnded - _timeStarted;
-	}
-
-	bool HasRun() const {
-		return _timeEnded.count() > 0;
-	}
-
-	bool HasPassed() const {
-		return !_lastFailure.has_value();
-	}
-
-	TestResultStatus Status() const
-	{
-		if (!HasRun())
-			return TestResultStatus::NotRun;
-
-		return HasPassed() ? TestResultStatus::Passed : TestResultStatus::Failed;
-	}
-
-	operator bool() const { return HasPassed(); }
-};
-
-
-struct TestManager
-{
-	static TestManager& Instance()
-	{
-		static TestManager _instance;
-		return _instance;
-	}
-
-	std::vector<TestCategory> _categories;
-
-	TestCategory* Add(const std::string& name)
-	{
-		return &(_categories.emplace_back(name));
-	}
-
-	void Run(const TestDefinition& definition);
-	void Run(const TestCategory& category);
-	//void Run(const std::vector<const TestDefinition&>& tests);
-
-	// TODO: Set?
-	std::vector<const TestDefinition*> Query()
-	{
-		// TODO: Support a string based query to query definition to get the test definitions
-		return std::vector<const TestDefinition*>();
-	}
-
-	const TestResult* FetchResult(const TestDefinition* definition) const
-	{
-		return const_cast<TestManager*>(this)->EditResult(definition);
-
-	}
-	TestResult* EditResult(const TestDefinition* definition)
-	{
-		if (auto iter = _testResults.find(definition->_id); iter != _testResults.end())
-			return &iter->second;
-		return &(_testResults[definition->_id] = TestResult());
-	}
-
-private:
-
-	TestResultStatus DetermineStatus(const TestCategory& category) const;
-	std::unordered_map<std::string, TestResult> _testResults;
-};
-
+#include "TestResult.h" // needed for test_failure
+#include "TestManager.h"
 
 
 #define GenerateTestDeclarationName(test_name) test_name ## _test_definition
@@ -164,7 +28,7 @@ namespace Tests::details
 		{
 			// TODO: We need to stop the timer for the current executing test on our thread
 			// as throwing the exception will add significant time
-			throw test_failed(condition_str, file, lineNumber);
+			throw test_failure(condition_str, file, lineNumber);
 		}
 			
 		return true;
@@ -245,7 +109,7 @@ struct TestGeneratorBase
 		return *(static_cast<TestGenerator<arg>*>(this));
 	}
 
-	TestGenerator<arg>& SetTimeout(std::chrono::duration timeout)
+	TestGenerator<arg>& SetTimeout(std::chrono::milliseconds timeout)
 	{
 		_timeout = timeout;
 		return *(static_cast<TestGenerator<arg>*>(this));
