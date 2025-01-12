@@ -1,6 +1,8 @@
 #include "ImGuiPanel_TestManager.h"
 #include "Foundation/imgui.h"
+#include "TestFramework/TestManager.h"
 #include "TestFramework/TestRunner.h"
+#include "TestFramework/TestCategory.h"
 
 #include <algorithm>
 
@@ -20,6 +22,11 @@ constexpr ImVec4 ToColor(TestResultStatus status)
 
 void ImGuiPanel_TestManager::OnImGui()
 {
+	if (ImGui::Button("Test All"))
+	{
+		TestManager::Instance().RunAll();
+	}
+
 	for (const auto& category : TestManager::Instance()._categories)
 		OnImGui(category);
 }

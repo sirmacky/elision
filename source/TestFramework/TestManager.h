@@ -28,6 +28,7 @@ struct TestManager
 		return &(_categories.emplace_back(name));
 	}
 
+	void RunAll();
 	void Run(const TestDefinition& definition);
 	void Run(const TestCategory& category);
 	//void Run(const std::vector<const TestDefinition&>& tests);
@@ -37,6 +38,8 @@ struct TestManager
 		// TODO: Support a string based query to query definition to get the test definitions
 		return std::unordered_set<const TestDefinition*>();
 	}
+
+	
 
 	const TestResult* FetchResult(const TestDefinition* definition) const
 	{

@@ -1,9 +1,9 @@
 
 #include "TestFramework/TestFramework.h"
-
 #include <memory>
 
-namespace Example
+
+namespace DataProviders
 {
 	auto GenerateSingleData()
 	{
@@ -35,30 +35,35 @@ DeclareTestCategory(Standard)
 {
 	using namespace std::chrono_literals;
 
-	DeclareTest(TestSomething,
-		ValueSource(Example::GenerateSingleData),
-		ValueSource(Example::GenerateSingleTupleData),
-		ValueCase(42),
-		ValueCase(1337),
-		Arguments(int a))
-	{
-		AssertThat(a != 1337);
-	}
+	DeclareTest(TestWithNoArgs) 
+	{}
 
-	DeclareTest(TestMultiple, WithRequirement(TestConcurrency::Exclusive),
-		Timeout(15ms),
-		ValueSource(Example::GenerateMultipleTupleData),
+	DeclareTest(TestWithTimeout, Timeout(15ms))
+	{}
+
+	DeclareTest(TestWithThreadPriority, WithRequirement(TestConcurrency::Exclusive))
+	{}
+
+	DeclareTest(TestValueSources, 
+		ValueSource(DataProviders::GenerateMultipleTupleData),
 		ValueCase(42, 43),
 		Arguments(int a, int b))
 	{
 		AssertThat(a < b);
 	}
 
-	DeclareTest(TestSomethingWithNoArgs)
+	DeclareTest(TestMultipleValueSources,
+		ValueSource(DataProviders::GenerateSingleData),
+		ValueSource(DataProviders::GenerateSingleTupleData),
+		ValueCase(42),
+		ValueCase(1337),
+		Arguments(int a))
 	{
-		AssertThat(1 > 0);
+		AssertThat(a != 1337);
 	}
 }
+
+
 
 
 // TODO: V3

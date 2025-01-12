@@ -15,6 +15,19 @@ TestResultStatus TestManager::DetermineStatus(const TestCategory& category) cons
 	return categoryStatus;
 }
 
+void TestManager::RunAll()
+{
+	std::unordered_set<const TestDefinition*> tests;
+	for (const auto& category : _categories)
+	{
+		category.VisitAllTests([&](const TestDefinition* test) {tests.insert(test); });
+	}
+
+	TestRunner _runner;
+	_runner.Run(tests);
+	_runner.Join();
+}
+
 void TestManager::Run(const TestDefinition& test)
 {
 	TestRunner::Run({ &test });
