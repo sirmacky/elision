@@ -1,4 +1,4 @@
-#include "TestFramework/TestRunner.h"
+#include "TestFramework/TestFramework.h"
 
 #include <thread>
 #include <chrono>
@@ -16,6 +16,7 @@ namespace MathUtils
 	}
 }
 
+// TODO: Move to it's own file
 namespace Tests::ValueSources
 {
 	template<int Start, int End>

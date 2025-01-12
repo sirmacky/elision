@@ -1,5 +1,5 @@
 #include "TestManager.h"
-#include "TestCoordinator.h"
+#include "TestRunner.h"
 #include "TestCategory.h"
 
 TestResultStatus TestManager::DetermineStatus(const TestCategory& category) const

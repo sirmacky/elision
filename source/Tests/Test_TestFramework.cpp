@@ -1,5 +1,5 @@
 
-#include "TestFramework/TestRunner.h"
+#include "TestFramework/TestFramework.h"
 
 #include <memory>
 
@@ -33,6 +33,8 @@ namespace Example
 
 DeclareTestCategory(Standard)
 {
+	using namespace std::chrono_literals;
+
 	DeclareTest(TestSomething,
 		ValueSource(Example::GenerateSingleData),
 		ValueSource(Example::GenerateSingleTupleData),
@@ -44,6 +46,7 @@ DeclareTestCategory(Standard)
 	}
 
 	DeclareTest(TestMultiple, WithRequirement(TestConcurrency::Exclusive),
+		Timeout(15ms),
 		ValueSource(Example::GenerateMultipleTupleData),
 		ValueCase(42, 43),
 		Arguments(int a, int b))
