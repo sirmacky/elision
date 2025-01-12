@@ -79,5 +79,6 @@ struct TestRunner
 	static void RunAsync(std::span<const TestDefinition* const> tests, const ExecutionOptions& options, std::stop_token token);
 	static void Run(const TestDefinition* const definition, const ExecutionOptions& option = ExecutionOptions());
 	static void Run(TestContext context, const ExecutionOptions& option = ExecutionOptions());
-	static void RunWithoutTimeout(TestContext context);
+private:
+	static void RunInternal(TestContext context, const ExecutionOptions& options);
 };

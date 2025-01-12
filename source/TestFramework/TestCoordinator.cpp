@@ -166,13 +166,6 @@ void TestRunner::Cancel()
 	// send a stop token
 	Status = Status::Cancelling;
 	_stopSource.request_stop();
-
-	// wait 100 ms
-	std::this_thread::sleep_for(100ms);
-
-	// annihlate the remaining tests.
-	_thread = {};
-	Status = Status::Idle;
 }
 
 void TestRunner::Join()
@@ -201,28 +194,30 @@ void TestRunner::Run(const TestDefinition* const definition, const ExecutionOpti
 void TestRunner::Run(TestContext context, const ExecutionOptions& options)
 {
 	// TODO: Find a better way of doing this
+		/*
 
 	// This is a single run of the test
-	std::thread thr([context]() { TestRunner::RunWithoutTimeout(context); });
-	auto future = std::async(std::launch::async, &std::thread::join, &thr);
+	auto future = std::async(std::launch::async, [context]() { TestRunner::RunWithoutTimeout(context); });
 
 	// if we're cancelled then this will execute fairly quickly if possible.
 	auto timeout = context.DetermineTimeout(options);
 	if (future.wait_for(timeout) == std::future_status::timeout)
 	{
-		context.SetFailure(std::format("exceeded timeout duration of {}", timeout));
+		
+		// ideally we'd kill the future here, but i need to figure out a way to do that.
+		// Kill the thread
+		//ThreadUtils::KillThread(thr);
 	}
-
-	// It's stuck, detach the thread and move on?
-	future._Abandon();
-	thr.detach();
-
 	
-	// Kill the thread
-	//ThreadUtils::KillThread(thr);
+	*/
+
+
+	// Note: thread kill timeouts appear to not be a thing, so we'll just be in an infinite testing loop effectively
+	TestRunner::RunInternal(context, options);
+
 };
 
-void TestRunner::RunWithoutTimeout(TestContext context)
+void TestRunner::RunInternal(TestContext context, const ExecutionOptions& options)
 {
 	context.Result->Reset();
 
@@ -246,5 +241,10 @@ void TestRunner::RunWithoutTimeout(TestContext context)
 	}
 	
 	context.Result->End(std::chrono::high_resolution_clock::now().time_since_epoch());
+
+	if (auto timeout = context.DetermineTimeout(options); context.Result->TimeTaken() > timeout)
+	{
+		context.SetFailure(std::format("exceeded timeout duration of {}", timeout));
+	}
 }
 

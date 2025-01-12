@@ -58,8 +58,11 @@ DeclareTestCategory(TestCoordinator)
 		std::this_thread::sleep_for(1s);
 	}
 
+	/*
 	DeclareTest(InfiniteLoading, Timeout(1s))
 	{
 		while (true) {}
 	}
+	*/
+
 }
