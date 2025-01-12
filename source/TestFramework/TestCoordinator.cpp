@@ -13,6 +13,27 @@
 #include <memory>
 #include <future>
 
+#if defined _WIN32
+#include <Windows.h>
+#include <processthreadsapi.h>
+#undef min
+#undef max
+namespace ThreadUtils
+{
+	bool KillThread(std::thread& thread)
+	{
+		if (!thread.joinable())
+			return false;
+
+		auto handle = thread.native_handle();
+		thread.detach();
+		bool ret = TerminateThread(handle, 0);
+		
+		return ret;
+	}
+}
+
+#endif
 
 //===========================================================================================================
 void TestContext::SetFailure(const std::string& reason)
@@ -60,7 +81,7 @@ void TestRunner::Run(std::unordered_set<const TestDefinition*> tests, const Exec
 	}
 
 	_stopSource = {};
-	_thread = std::thread([&tests,options, this]()
+	_thread = std::thread([=, this]()
 	{
 		Run(tests, options, _stopSource.get_token());
 		this->Status = Status::Done;
@@ -185,14 +206,20 @@ void TestRunner::Run(TestContext context, const ExecutionOptions& options)
 	std::thread thr([context]() { TestRunner::RunWithoutTimeout(context); });
 	auto future = std::async(std::launch::async, &std::thread::join, &thr);
 
-	// if we're cancelled then this will execute fairly quiickly if possible.
+	// if we're cancelled then this will execute fairly quickly if possible.
 	auto timeout = context.DetermineTimeout(options);
 	if (future.wait_for(timeout) == std::future_status::timeout)
 	{
 		context.SetFailure(std::format("exceeded timeout duration of {}", timeout));
 	}
 
-	// the thread's destructor should kill the process?
+	// It's stuck, detach the thread and move on?
+	future._Abandon();
+	thr.detach();
+
+	
+	// Kill the thread
+	//ThreadUtils::KillThread(thr);
 };
 
 void TestRunner::RunWithoutTimeout(TestContext context)
