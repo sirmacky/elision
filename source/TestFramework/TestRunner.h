@@ -14,16 +14,15 @@
 #include <vector>
 #include <array>
 #include <span>
-#include <unordered_set>
 
 #include <thread>
 
 #include "TestDefinition.h"
 
 
-struct ExecutionOptions
+struct TestExecutionOptions
 {
-	ExecutionOptions& ForceOntoMainThread() { MaxNumberOfSimultaneousThreads = 0; return *this; }
+	TestExecutionOptions& ForceOntoMainThread() { MaxNumberOfSimultaneousThreads = 0; return *this; }
 
 	int MaxNumberOfSimultaneousThreads = 4;
 	int MinimumNumberOfTestsPerThread = 100;
@@ -49,7 +48,7 @@ struct TestContext
 	void SetFailure(const std::string& reason);
 	void SetFailure(const test_failure& failure);
 
-	std::chrono::milliseconds DetermineTimeout(const ExecutionOptions& options) const;
+	std::chrono::milliseconds DetermineTimeout(const TestExecutionOptions& options) const;
 };
 
 // TODO: the test runner should work on contexts
@@ -68,17 +67,16 @@ struct TestRunner
 
 	Status Status = Status::Idle;
 
-	void Run(std::unordered_set<const TestDefinition*> tests, const ExecutionOptions& options = ExecutionOptions());
+	void Run(std::vector<TestContext>& tests, const TestExecutionOptions& options = TestExecutionOptions());
 	void Cancel();
 	void Join();
 
 	std::stop_source _stopSource{};
 	std::thread _thread;
 
-	static void Run(std::unordered_set<const TestDefinition*> tests, const ExecutionOptions& options, std::stop_token token);
-	static void RunAsync(std::span<const TestDefinition* const> tests, const ExecutionOptions& options, std::stop_token token);
-	static void Run(const TestDefinition* const definition, const ExecutionOptions& option = ExecutionOptions());
-	static void Run(TestContext context, const ExecutionOptions& option = ExecutionOptions());
+	static void RunAll(std::vector<TestContext>& tests, const TestExecutionOptions& options, std::stop_token token);
+	static void RunAsync(std::span<TestContext* const> tests, const TestExecutionOptions& options, std::stop_token token);
+	static void Run(TestContext& context, const TestExecutionOptions& options, std::stop_token token);
 private:
-	static void RunInternal(TestContext context, const ExecutionOptions& options);
+	static void RunInternal(TestContext& context, const TestExecutionOptions& options);
 };

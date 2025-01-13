@@ -46,7 +46,7 @@ void TestContext::SetFailure(const test_failure& reason)
 	Result->SetFailure(reason);
 }
 
-std::chrono::milliseconds TestContext::DetermineTimeout(const ExecutionOptions& options) const
+std::chrono::milliseconds TestContext::DetermineTimeout(const TestExecutionOptions& options) const
 {
 	using namespace std::chrono_literals;
 
@@ -60,7 +60,7 @@ std::chrono::milliseconds TestContext::DetermineTimeout(const ExecutionOptions& 
 	return timeout;
 }
 //===========================================================================================================
-void TestRunner::Run(std::unordered_set<const TestDefinition*> tests, const ExecutionOptions& options)
+void TestRunner::Run(std::vector<TestContext>& tests, const TestExecutionOptions& options)
 {
 	if (Status != Status::Idle)
 	{
@@ -68,37 +68,61 @@ void TestRunner::Run(std::unordered_set<const TestDefinition*> tests, const Exec
 		if (Status != Status::Idle)
 			return;
 	}
+	
 
 	// Determine if we need to cancel first.
 	Status = Status::Running;
 	
+	_stopSource = {};
+
 	// if there are no threads, then execute everything on the main thread
 	if (options.MaxNumberOfSimultaneousThreads == 0)
 	{
-		for (const auto* test : tests)
-			TestRunner::Run(test, options);
+		TestRunner::RunAll(tests, options, this->_stopSource.get_token());
 		return;
 	}
 
-	_stopSource = {};
-	_thread = std::thread([=, this]()
+	if (_thread.joinable())
+		_thread.join();
+	
+	_thread = std::thread([=, this]() mutable
 	{
-		Run(tests, options, _stopSource.get_token());
-		this->Status = Status::Done;
+		TestRunner::RunAll(tests, options, this->_stopSource.get_token());
+		this->Status = Status::Idle;
 	});
 }
+
+void TestRunner::Cancel()
+{
+	using namespace std::chrono_literals;
+
+	if (Status != Status::Running)
+		return;
+
+	// send a stop token
+	Status = Status::Cancelling;
+	_stopSource.request_stop();
+
+	Join();
+}
+
+void TestRunner::Join()
+{
+	if (_thread.joinable())
+		_thread.join();
+}
 	
-void TestRunner::Run(std::unordered_set<const TestDefinition*> tests, const ExecutionOptions& options, std::stop_token token)
+void TestRunner::RunAll(std::vector<TestContext>& tests, const TestExecutionOptions& options, std::stop_token token)
 {
 	// Split the tests into different cohorts
-	std::array<std::vector<const TestDefinition*>, static_cast<int>(TestConcurrency::Count)> _cohorts;
-	for (const auto* test : tests)
+	std::array<std::vector<TestContext*>, static_cast<int>(TestConcurrency::Count)> _cohorts;
+	for (auto& context : tests)
 	{
-		auto concurrency = test->_concurrency;
+		auto concurrency = context.Definition->_concurrency;
 
 		concurrency = std::min(concurrency, options.MaximumConcurrency.value_or(concurrency));
 		concurrency = options.EnforcedConcurrency.value_or(concurrency);
-		_cohorts[static_cast<int>(concurrency)].push_back(test);
+		_cohorts[static_cast<int>(concurrency)].push_back(&context);
 	}
 
 	// anything that is exclusive we run now.
@@ -132,9 +156,7 @@ void TestRunner::Run(std::unordered_set<const TestDefinition*> tests, const Exec
 			if (index >= remainder.size())
 				break;
 
-			const auto* definition = remainder[index];
-
-			TestRunner::Run(definition, options);
+			TestRunner::Run(*remainder[index], options, token);
 		}
 	};
 
@@ -156,42 +178,20 @@ void TestRunner::Run(std::unordered_set<const TestDefinition*> tests, const Exec
 	// and we're done!
 }
 
-void TestRunner::Cancel()
+
+
+void TestRunner::RunAsync(std::span<TestContext* const> tests, const TestExecutionOptions& options, std::stop_token token)
 {
-	using namespace std::chrono_literals;
-
-	if (Status != Status::Running)
-		return;
-
-	// send a stop token
-	Status = Status::Cancelling;
-	_stopSource.request_stop();
-}
-
-void TestRunner::Join()
-{
-	if (_thread.joinable())
-		_thread.join();
-}
-
-void TestRunner::RunAsync(std::span<const TestDefinition* const> tests, const ExecutionOptions& options, std::stop_token token)
-{
-	for (const auto* test : tests)
+	for (auto* test : tests)
 	{
 		if (token.stop_requested())
 			return;
 
-		TestRunner::Run(test, options);
+		TestRunner::Run(*test, options, token);
 	}
 }
 
-void TestRunner::Run(const TestDefinition* const definition, const ExecutionOptions& options)
-{
-	TestResult result;
-	TestRunner::Run({definition, &result }, options);
-}
-
-void TestRunner::Run(TestContext context, const ExecutionOptions& options)
+void TestRunner::Run(TestContext& context, const TestExecutionOptions& options, std::stop_token token)
 {
 	using namespace std::chrono_literals;
 	
@@ -206,16 +206,27 @@ void TestRunner::Run(TestContext context, const ExecutionOptions& options)
 	auto startTime = std::chrono::high_resolution_clock::now().time_since_epoch();
 	while (!complete)
 	{
-		if (std::chrono::high_resolution_clock::now().time_since_epoch() - startTime >= timeout)
+		auto delta = std::chrono::high_resolution_clock::now().time_since_epoch() - startTime;
+		if (delta >= timeout)
 		{
 			context.SetFailure(std::format("exceeded timeout duration of {}", timeout));
 			ThreadUtils::KillThread(thr);
 			break;
 		}
+
+		if (token.stop_requested())
+		{
+			context.SetFailure(std::format("cancelled"));
+			ThreadUtils::KillThread(thr);
+			break;
+		}
 	}
+
+	if (thr.joinable())
+		thr.join();
 };
 
-void TestRunner::RunInternal(TestContext context, const ExecutionOptions& options)
+void TestRunner::RunInternal(TestContext& context, const TestExecutionOptions& options)
 {
 	context.Result->Reset();
 

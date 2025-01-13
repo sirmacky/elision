@@ -1,37 +1,72 @@
 
 #include "TestFramework/TestFramework.h"
 #include <memory>
+#include <thread>
+#include <chrono>
+#include <cmath>
 
-
-namespace DataProviders
+namespace MathUtils
 {
-	auto GenerateSingleData()
+	constexpr auto SignOf(auto val)
 	{
-		std::vector<int> a(10);
-		for (int i = 0; i < 10; ++i)
-			a[i] = i;
+		if (val < 0)
+			return -1;
+		if (val > 0)
+			return 1;
+		return 0;
+	}
+}
+
+// TODO: Move to it's own file
+namespace Tests::ValueSources
+{
+	template<int Start, int End>
+	auto IntegerRange()
+	{
+		constexpr int diff = (long)Start - (long)End;
+		constexpr int direction = MathUtils::SignOf(diff);
+		const int num = std::abs(diff);
+
+		std::vector<int> values(num);
+		for (int i = 0; i < num; ++i)
+			values[i] = Start + (i * direction);
+
+		return values;
+	}
+
+	template<int Start, int End>
+	auto SingleValueTupleRange()
+	{
+		constexpr int diff = (long)Start - (long)End;
+		constexpr int direction = MathUtils::SignOf(diff);
+		const int num = std::abs(diff);
+
+		std::vector<std::tuple<int>> a(num);
+		for (int i = 0; i < num; ++i)
+			a[i] = (std::make_tuple(Start + (i * direction)));
 		return a;
 	}
 
-	auto GenerateSingleTupleData()
+	template<int Start, int End>
+	auto MultipleValueTupleData()
 	{
-		std::vector<std::tuple<int>> a(10);
-		for (int i = 0; i < 10; ++i)
-			a[i] = (std::make_tuple(i+10));
-		return a;
-	}
+		constexpr int diff = (long)Start - (long)End;
+		constexpr int direction = MathUtils::SignOf(diff);
+		const int num = std::abs(diff);
 
-	auto GenerateMultipleTupleData()
-	{
-		std::vector<std::tuple<int, int>> a(10);
-		for (int i = 0; i < 10; ++i)
-			a[i] = (std::make_tuple(i, i + 10));
+		std::vector<std::tuple<int, int>> a(num);
+		for (int i = 0; i < num; ++i)
+		{
+			auto val = Start + (i * direction);
+			a[i] = (std::make_tuple(val, val * 10));
+		}
+			
 		return a;
 	}
 }
 
 
-DeclareTestCategory(Standard)
+DeclareTestCategory(FrameworkStructure)
 {
 	using namespace std::chrono_literals;
 
@@ -45,7 +80,7 @@ DeclareTestCategory(Standard)
 	{}
 
 	DeclareTest(TestValueSources, 
-		ValueSource(DataProviders::GenerateMultipleTupleData),
+		ValueSource(Tests::ValueSources::MultipleValueTupleData<1, 10>),
 		ValueCase(42, 43),
 		Arguments(int a, int b))
 	{
@@ -53,13 +88,49 @@ DeclareTestCategory(Standard)
 	}
 
 	DeclareTest(TestMultipleValueSources,
-		ValueSource(DataProviders::GenerateSingleData),
-		ValueSource(DataProviders::GenerateSingleTupleData),
+		ValueSource(Tests::ValueSources::IntegerRange<1,10>),
+		ValueSource(Tests::ValueSources::SingleValueTupleRange<1,10>),
 		ValueCase(42),
 		ValueCase(1337),
 		Arguments(int a))
 	{
 		AssertThat(a != 1337);
+	}
+}
+
+DeclareTestCategory(FrameworkConcurrency)
+{
+	using namespace std::chrono_literals;
+
+	DeclareTest(ExclusiveSleeps, WithRequirement(TestConcurrency::Exclusive),
+		ValueSource(Tests::ValueSources::IntegerRange<1, 20>),
+		Arguments(int _))
+	{
+		std::this_thread::sleep_for(1s);
+	}
+
+	DeclareTest(PrivelagedSleeps, WithRequirement(TestConcurrency::Privelaged),
+		ValueSource(Tests::ValueSources::IntegerRange<1, 20>),
+		Arguments(int _))
+	{
+		std::this_thread::sleep_for(1s);
+	}
+
+	DeclareTest(AnySleeps, WithRequirement(TestConcurrency::Any),
+		ValueSource(Tests::ValueSources::IntegerRange<1, 100>),
+		Arguments(int _))
+	{
+		std::this_thread::sleep_for(1s);
+	}
+
+	DeclareTest(SleepingTimeout, Timeout(1s))
+	{
+		std::this_thread::sleep_for(5s);
+	}
+
+	DeclareTest(InfiniteLoop, Timeout(1s))
+	{
+		while (true) {}
 	}
 }
 

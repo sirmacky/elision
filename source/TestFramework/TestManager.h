@@ -7,6 +7,7 @@
 
 #include "TestResult.h"
 #include "TestDefinition.h"
+#include "TestRunner.h"
 
 // TODO:
 // Have the definitions stored in a TestDataStore rather than the manager
@@ -21,6 +22,7 @@ struct TestManager
 		return _instance;
 	}
 
+	TestExecutionOptions TestOptions;
 	std::vector<TestCategory> _categories;
 
 	TestCategory* Add(const std::string& name)
@@ -31,15 +33,13 @@ struct TestManager
 	void RunAll();
 	void Run(const TestDefinition& definition);
 	void Run(const TestCategory& category);
-	//void Run(const std::vector<const TestDefinition&>& tests);
+	void Run(const std::unordered_set<const TestDefinition*> tests);
 
 	std::unordered_set<const TestDefinition*> Query()
 	{
 		// TODO: Support a string based query to query definition to get the test definitions
 		return std::unordered_set<const TestDefinition*>();
 	}
-
-	
 
 	const TestResult* FetchResult(const TestDefinition* definition) const
 	{
@@ -54,6 +54,8 @@ struct TestManager
 	}
 
 private:
+
+	TestRunner _testRunner;
 
 	TestResultStatus DetermineStatus(const TestCategory& category) const;
 	std::unordered_map<std::string, TestResult> _testResults;
