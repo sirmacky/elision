@@ -193,28 +193,26 @@ void TestRunner::Run(const TestDefinition* const definition, const ExecutionOpti
 
 void TestRunner::Run(TestContext context, const ExecutionOptions& options)
 {
-	// TODO: Find a better way of doing this
-		/*
-
-	// This is a single run of the test
-	auto future = std::async(std::launch::async, [context]() { TestRunner::RunWithoutTimeout(context); });
-
-	// if we're cancelled then this will execute fairly quickly if possible.
-	auto timeout = context.DetermineTimeout(options);
-	if (future.wait_for(timeout) == std::future_status::timeout)
-	{
-		
-		// ideally we'd kill the future here, but i need to figure out a way to do that.
-		// Kill the thread
-		//ThreadUtils::KillThread(thr);
-	}
+	using namespace std::chrono_literals;
 	
-	*/
+	auto timeout = context.DetermineTimeout(options);
 
+	std::atomic<bool> complete{ false };
+	std::thread thr([&]()	{
+		TestRunner::RunInternal(context, options);
+		complete = true;
+	});
 
-	// Note: thread kill timeouts appear to not be a thing, so we'll just be in an infinite testing loop effectively
-	TestRunner::RunInternal(context, options);
-
+	auto startTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+	while (!complete)
+	{
+		if (std::chrono::high_resolution_clock::now().time_since_epoch() - startTime >= timeout)
+		{
+			context.SetFailure(std::format("exceeded timeout duration of {}", timeout));
+			ThreadUtils::KillThread(thr);
+			break;
+		}
+	}
 };
 
 void TestRunner::RunInternal(TestContext context, const ExecutionOptions& options)
