@@ -14,7 +14,7 @@
 #include <vector>
 #include <array>
 #include <span>
-
+#include <unordered_set>
 #include <thread>
 
 #include "TestDefinition.h"
@@ -24,8 +24,8 @@ struct TestExecutionOptions
 {
 	TestExecutionOptions& ForceOntoMainThread() { MaxNumberOfSimultaneousThreads = 0; return *this; }
 
-	int MaxNumberOfSimultaneousThreads = 4;
-	int MinimumNumberOfTestsPerThread = 100;
+	int MaxNumberOfSimultaneousThreads = 6;
+	int MinimumNumberOfTestsPerThread = 2;
 	float Variance = 0.5f;
 	std::chrono::milliseconds DefaultTimeOut{ 5000 };
 
@@ -35,7 +35,6 @@ struct TestExecutionOptions
 	std::optional<TestConcurrency> EnforcedConcurrency;
 	std::optional<std::chrono::milliseconds> MaximumTimeout;
 };
-
 
 struct TestResult;
 class test_failure;
@@ -51,26 +50,27 @@ struct TestContext
 	std::chrono::milliseconds DetermineTimeout(const TestExecutionOptions& options) const;
 };
 
-// TODO: the test runner should work on contexts
-// TODO: the TestContext should not have the options on it.
-
-// This will run a test for a single thread
 struct TestRunner
 {
+	TestRunner() = default;
+	~TestRunner();
+
 	enum class Status
 	{
 		Idle,
 		Running,
 		Cancelling,
-		Done,
 	};
 
-	Status Status = Status::Idle;
+	std::atomic<Status> Status{ Status::Idle };
+
+	bool IsScheduled(const TestDefinition* test) const;
 
 	void Run(std::vector<TestContext>& tests, const TestExecutionOptions& options = TestExecutionOptions());
 	void Cancel();
 	void Join();
 
+	std::unordered_set<const TestDefinition*> _tests;
 	std::stop_source _stopSource{};
 	std::thread _thread;
 
@@ -79,4 +79,6 @@ struct TestRunner
 	static void Run(TestContext& context, const TestExecutionOptions& options, std::stop_token token);
 private:
 	static void RunInternal(TestContext& context, const TestExecutionOptions& options);
+
+	void OnFinish();
 };

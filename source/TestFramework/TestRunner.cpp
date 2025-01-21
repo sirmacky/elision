@@ -60,6 +60,18 @@ std::chrono::milliseconds TestContext::DetermineTimeout(const TestExecutionOptio
 	return timeout;
 }
 //===========================================================================================================
+
+TestRunner::~TestRunner()
+{
+	if (_thread.joinable())
+		ThreadUtils::KillThread(_thread);
+}
+
+bool TestRunner::IsScheduled(const TestDefinition* test) const {
+	return _tests.contains(test);
+}
+
+
 void TestRunner::Run(std::vector<TestContext>& tests, const TestExecutionOptions& options)
 {
 	if (Status != Status::Idle)
@@ -68,10 +80,12 @@ void TestRunner::Run(std::vector<TestContext>& tests, const TestExecutionOptions
 		if (Status != Status::Idle)
 			return;
 	}
-	
 
 	// Determine if we need to cancel first.
 	Status = Status::Running;
+	_tests.clear();
+	for (const auto& context : tests)
+		_tests.insert(context.Definition);
 	
 	_stopSource = {};
 
@@ -88,7 +102,7 @@ void TestRunner::Run(std::vector<TestContext>& tests, const TestExecutionOptions
 	_thread = std::thread([=, this]() mutable
 	{
 		TestRunner::RunAll(tests, options, this->_stopSource.get_token());
-		this->Status = Status::Idle;
+		this->OnFinish();
 	});
 }
 
@@ -110,6 +124,12 @@ void TestRunner::Join()
 {
 	if (_thread.joinable())
 		_thread.join();
+}
+
+void TestRunner::OnFinish()
+{
+	Status = Status::Idle;
+	_tests.clear();
 }
 	
 void TestRunner::RunAll(std::vector<TestContext>& tests, const TestExecutionOptions& options, std::stop_token token)
@@ -141,7 +161,8 @@ void TestRunner::RunAll(std::vector<TestContext>& tests, const TestExecutionOpti
 	if (remainder.size() > 0)
 	{
 		int totalRemainingTests = (int)(remainder.size() + privelaged.size());
-		int preferredNumThreads = (int)(totalRemainingTests / options.MinimumNumberOfTestsPerThread);
+		int	preferredNumThreads = (int)(totalRemainingTests / std::max(options.MinimumNumberOfTestsPerThread, 1));
+		
 
 		int availableThreads = options.MaxNumberOfSimultaneousThreads - 1;
 		numAdditionalThreads = std::min(preferredNumThreads, availableThreads);

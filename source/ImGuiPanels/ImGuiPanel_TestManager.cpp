@@ -63,7 +63,7 @@ void ImGuiPanel_TestManager::OnImGui(const TestDefinition& definition)
 	auto idScope = ImGui::Scoped::Id(definition._name);
 
 	const auto* result = TestManager::Instance().FetchResult(&definition);
-	auto status = result->Status();
+	auto status = TestManager::Instance().DetermineStatus(&definition);
 
 	ImGui::SameLine();
 	ImGui::TextColored(ToColor(status), XEnumTraits<decltype(status)>::ToCString(status));

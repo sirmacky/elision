@@ -4,12 +4,7 @@
 #include <string>
 #include <format>
 
-// TODO: Remove and use an expose macro for the imgui
-#include <XEnum.h>
-ImplementXEnum(TestResultStatus,
-	XValue(Passed),
-	XValue(NotRun),
-	XValue(Failed))
+
 
 
 class test_failure
@@ -76,6 +71,14 @@ struct TestResult
 		return _timeEnded - _timeStarted;
 	}
 
+	bool HasStarted() const {
+		return _timeStarted.count() > 0;
+	}
+
+	bool HasEnded() const {
+		return HasRun(); 
+	}
+
 	bool HasRun() const {
 		return _timeEnded.count() > 0;
 	}
@@ -84,13 +87,7 @@ struct TestResult
 		return !_lastFailure.has_value();
 	}
 
-	TestResultStatus Status() const
-	{
-		if (!HasRun())
-			return TestResultStatus::NotRun;
-
-		return HasPassed() ? TestResultStatus::Passed : TestResultStatus::Failed;
-	}
+	
 
 	operator bool() const { return HasPassed(); }
 };
