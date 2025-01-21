@@ -49,7 +49,7 @@ struct TestManager
 
 	TestResultStatus DetermineStatus(const TestCategory& category) const;
 	TestResultStatus DetermineStatus(const TestDefinition* definition) const;
-	TestResultStatus DetermineStatus(const TestResult* result) const;
+	
 	bool IsQueued(const TestDefinition* definition) const;
 
 	std::unordered_set<const TestDefinition*> Query()

@@ -39,31 +39,6 @@ TestResultStatus TestManager::DetermineStatus(const TestDefinition* definition) 
 	
 }
 
-TestResultStatus TestManager::DetermineStatus(const TestDefinition* definition) const
-{
-	const auto* result = FetchResult(definition);
-
-	if (IsQueued(definition))
-	{
-		if (!result->HasStarted())
-		{
-			return TestResultStatus::WaitingToRun;
-		}
-		else if (!result->HasEnded())
-		{
-			return TestResultStatus::Running;
-		}
-	}
-
-	if (!result->HasRun())
-	{
-		return TestResultStatus::NotRun;
-	}
-
-	return result->HasPassed() ? TestResultStatus::Passed : TestResultStatus::Failed;
-
-}
-
 bool TestManager::IsQueued(const TestDefinition* test) const
 {
 	return _testRunner.IsScheduled(test);
