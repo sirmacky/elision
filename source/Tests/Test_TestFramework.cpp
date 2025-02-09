@@ -23,9 +23,9 @@ namespace Tests::ValueSources
 	template<int Start, int End>
 	auto IntegerRange()
 	{
-		constexpr int diff = (long)Start - (long)End;
+		constexpr int diff = (long)End - (long)Start;
 		constexpr int direction = MathUtils::SignOf(diff);
-		const int num = std::abs(diff);
+		const int num = std::abs(diff) + 1;
 
 		std::vector<int> values(num);
 		for (int i = 0; i < num; ++i)
@@ -37,9 +37,9 @@ namespace Tests::ValueSources
 	template<int Start, int End>
 	auto SingleValueTupleRange()
 	{
-		constexpr int diff = (long)Start - (long)End;
+		constexpr int diff = (long)End - (long)Start;
 		constexpr int direction = MathUtils::SignOf(diff);
-		const int num = std::abs(diff);
+		const int num = std::abs(diff) + 1;
 
 		std::vector<std::tuple<int>> a(num);
 		for (int i = 0; i < num; ++i)
@@ -50,9 +50,9 @@ namespace Tests::ValueSources
 	template<int Start, int End>
 	auto MultipleValueTupleData()
 	{
-		constexpr int diff = (long)Start - (long)End;
+		constexpr int diff = (long)End - (long)Start;
 		constexpr int direction = MathUtils::SignOf(diff);
-		const int num = std::abs(diff);
+		const int num = std::abs(diff) + 1;
 
 		std::vector<std::tuple<int, int>> a(num);
 		for (int i = 0; i < num; ++i)
@@ -64,7 +64,6 @@ namespace Tests::ValueSources
 		return a;
 	}
 }
-
 
 DeclareTestCategory(FrameworkStructure)
 {
@@ -148,8 +147,8 @@ DeclareTestCategory(FrameworkConcurrency)
 
 #define DeclareTestCategoryV3(name) namespace name
 
-#define DeclareTestCategoryTeardown() void Teardown()
 #define DeclareTestCategorySetup() void Setup()
+#define DeclareTestCategoryTeardown() void Teardown()
 
 
 DeclareTestCategoryV3(TestsV3)
@@ -236,6 +235,68 @@ DeclareTestCategoryV3(TestsV3)
 		_DatabaseDependency->Resource.whatever
 	}
 	*/
+}
+
+
+
+// All tests must belong to a category.
+DeclareTestCategory(Examples)
+{
+	using namespace std::chrono_literals;
+
+	// These macros allow the test category to set up and teardown additional data 
+	// that all tests in the category may want to use. This will be supported later
+	// with a dependency graph based system allowing multiple categories to share
+	// resources, speeding up test runs
+	DeclareTestCategorySetup() {}
+	DeclareTestCategoryTeardown() {}
+
+
+	// Simple tests can be declared with no arguments
+	DeclareTest(NoArguments)
+	{
+		AssertThat(true != false);
+	}
+
+	// An argument can optionally be defined
+	DeclareTest(SingleArgument, Arguments(int a),
+		// Which can either come from explicit pre-defined value cases
+		ValueCase(42),
+		ValueCase(44),
+		// Or from value sources as either a vector<T> or vector<tuple<T>>
+		// You can mix and match multiple sources, and value cases together simultaneously
+		ValueSource(Tests::ValueSources::IntegerRange<1, 5>),
+		ValueSource(Tests::ValueSources::SingleValueTupleRange<6, 10>))
+	{
+		AssertThat(a < 1337);
+	}
+
+	// Multiple arguments can also be supported via valuecase's and tuple based value sources
+	// Note that the order of option arguments to the DeclareTest macro is irrelevant
+	// so tests can be formatted more organically like below
+	DeclareTest(MultipleArguments,
+		ValueCase(42, 43),
+		ValueCase(44, 45),
+		ValueSource(Tests::ValueSources::MultipleValueTupleData<1, 5>),
+		ValueSource(Tests::ValueSources::MultipleValueTupleData<6, 10>),
+		Arguments(int a, int b))
+	{
+		AssertThat(a < b);
+	}
+
+	// Additional test options are also availble
+	DeclareTest(Options,
+		/* Configurable concurrency requirements allow tests to be run
+		 * exclusively: can be the only test running
+		 * privelaged: can only be run on the privelaged job thread
+		 * multithreaded (default): Can run on any testing job thread
+	   //*/
+		WithRequirement(TestConcurrency::Exclusive),
+		// Tests are automatically stopped and failed if they exceed the timeout
+		Timeout(15ms))
+	{
+		while (true) {}
+	}
 }
 
 

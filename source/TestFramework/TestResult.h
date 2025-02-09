@@ -87,7 +87,5 @@ struct TestResult
 		return !_lastFailure.has_value();
 	}
 
-	
-
 	operator bool() const { return HasPassed(); }
 };
