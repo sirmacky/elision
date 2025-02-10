@@ -53,7 +53,11 @@
 #include <array>
 #include <string>
 
-template<typename EnumType> struct XEnumTraits { static constexpr bool is_valid = false; };
+template<typename EnumType> struct XEnumTraits 
+{ 
+	static constexpr bool is_valid = false;  
+	static constexpr size_t Count = 0; 
+};
 
 template<typename EnumType> concept XEnumValue = XEnumTraits<EnumType>::is_valid;
 
