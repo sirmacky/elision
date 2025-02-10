@@ -19,6 +19,9 @@
     <Filter Include="Application\Services">
       <UniqueIdentifier>{53bbfc31-72c2-482e-b380-85d096e5daa1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Foundation\utils">
+      <UniqueIdentifier>{16107745-1413-4cb8-a839-1cac44c7c798}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Application\main.cpp">
@@ -41,6 +44,9 @@
     </ClCompile>
     <ClCompile Include="source\TestFramework\TestManager.cpp">
       <Filter>TestFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="source\foundation\utils\StringUtils.cpp">
+      <Filter>Foundation\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -79,6 +85,9 @@
     </ClInclude>
     <ClInclude Include="source\TestFramework\TestManager.h">
       <Filter>TestFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="source\foundation\utils\StringUtils.h">
+      <Filter>Foundation\utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
