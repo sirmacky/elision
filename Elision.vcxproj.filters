@@ -71,9 +71,6 @@
     <ClInclude Include="source\TestFramework\TestFramework.h">
       <Filter>TestFramework</Filter>
     </ClInclude>
-    <ClInclude Include="source\TestFramework\TestCategory.h">
-      <Filter>TestFramework</Filter>
-    </ClInclude>
     <ClInclude Include="source\TestFramework\TestDefinition.h">
       <Filter>TestFramework</Filter>
     </ClInclude>

@@ -6,19 +6,17 @@
 #include <memory>
 #include <functional>
 
-struct TestCategory
+struct TestObject
 {
-	// TODO: Move this to a centralized container
-
 	std::string Name;
 	std::vector<TestDefinition> Tests;
-	std::vector<std::unique_ptr<TestCategory>> SubCategories;
+	std::vector<std::unique_ptr<TestObject>> SubCategories;
 
-	TestCategory(const std::string& name) {
+	TestObject(const std::string& name) {
 		Name = name;
 	}
 
-	TestCategory(const std::string& name, std::vector<TestDefinition>&& tests)
+	TestObject(const std::string& name, std::vector<TestDefinition>&& tests)
 	{
 		Name = name;
 		Tests = std::move(tests);
@@ -26,7 +24,7 @@ struct TestCategory
 
 	bool IsEmpty() const { return (Tests.size() + SubCategories.size()) == 0; }
 
-	const TestCategory* Add(std::unique_ptr<TestCategory>&& category)
+	const TestObject* Add(std::unique_ptr<TestObject>&& category)
 	{
 		return SubCategories.emplace_back(std::move(category)).get();
 	}

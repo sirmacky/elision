@@ -41,6 +41,7 @@ class test_failure;
 
 struct TestContext
 {
+	// TODO: Should this be the object?
 	const TestDefinition* Definition;
 	TestResult* Result;
 

@@ -43,15 +43,17 @@ private:
 
 struct TestResult
 {
-	std::chrono::nanoseconds _timeStarted{ 0 };
-	std::chrono::nanoseconds _timeEnded{ 0 };
+	std::chrono::nanoseconds _timeStarted = std::chrono::nanoseconds::zero();
+	std::chrono::nanoseconds _timeEnded = std::chrono::nanoseconds::zero();
 	std::optional<test_failure> _lastFailure;
+
+	
 
 	void Reset()
 	{
 		_lastFailure.reset();
-		_timeEnded = {};
-		_timeStarted = {};
+		_timeEnded = std::chrono::nanoseconds::zero();
+		_timeStarted = std::chrono::nanoseconds::zero();
 	}
 
 	void Begin(std::chrono::nanoseconds timeStarted) {

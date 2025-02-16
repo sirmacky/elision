@@ -36,7 +36,6 @@
     <ClInclude Include="source\foundation\utils\StringUtils.h" />
     <ClInclude Include="source\ImGuiPanels\ImGuiPanel.h" />
     <ClInclude Include="source\ImGuiPanels\ImGuiPanel_TestManager.h" />
-    <ClInclude Include="source\TestFramework\TestCategory.h" />
     <ClInclude Include="source\TestFramework\TestRunner.h" />
     <ClInclude Include="source\TestFramework\TestDefinition.h" />
     <ClInclude Include="source\TestFramework\TestManager.h" />

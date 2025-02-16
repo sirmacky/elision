@@ -24,6 +24,39 @@ ImplementXEnum(TestResultStatus,
 	XValue(Running)
 )
 
+/*
+ImplementXEnum(TestType,
+	XValue(Category),
+	XValue(Test)
+)
+*/
+
+// Queries to be supported
+// matching a name
+// categories only
+// tests only
+// That are scheduled, Not run, Successful, Failed, 
+// include all tests in matching categories
+#include <bitset>
+
+
+
+// this system doesnt need to be embedded, and can be done at a higher layer.
+
+struct TestQuery
+{
+	enum class TestType
+	{
+		Category,
+		Test,
+	};
+
+	std::string StrMatch;
+	std::bitset<XEnumTraits<TestType>::Count> TypeMask{ ~0ULL };
+	std::bitset<XEnumTraits<TestResultStatus>::Count> StatusMask{ ~0ULL };
+};
+	
+
 struct TestManager
 {
 	static TestManager& Instance()
@@ -33,9 +66,9 @@ struct TestManager
 	}
 
 	TestExecutionOptions TestOptions;
-	std::vector<TestCategory> _categories;
+	std::vector<TestObject> _categories;
 
-	TestCategory* Add(const std::string& name)
+	TestObject* Add(const std::string& name)
 	{
 		return &(_categories.emplace_back(name));
 
@@ -43,21 +76,23 @@ struct TestManager
 	}
 
 	void RunAll();
+	void Run(const TestObject& category);
 	void Run(const TestDefinition& definition);
-	void Run(const TestCategory& category);
 	void Run(const std::unordered_set<const TestDefinition*> tests);
 
-	TestResultStatus DetermineStatus(const TestCategory& category) const;
+	TestResultStatus DetermineStatus(const TestObject* category) const;
 	TestResultStatus DetermineStatus(const TestDefinition* definition) const;
 	
 	bool IsQueued(const TestDefinition* definition) const;
 
+	// TODO: Potentially change to a database for the results?
 	std::unordered_set<const TestDefinition*> Query()
 	{
 		// TODO: Support a string based query to query definition to get the test definitions
 		return std::unordered_set<const TestDefinition*>();
 	}
 
+	std::unordered_set<const TestObject*> Query(const TestQuery& query) const;
 
 	const TestResult* FetchResult(const TestDefinition* definition) const
 	{
@@ -66,11 +101,17 @@ struct TestManager
 
 private:
 
+	TestResult* EditResult(const TestObject* object)
+	{
+		if (auto iter = _testResults.find(object->Id); iter != _testResults.end())
+			return &iter->second;
+		return &(_testResults[object->Id] = TestResult());
+	}
+
+
 	TestResult* EditResult(const TestDefinition* definition)
 	{
-		if (auto iter = _testResults.find(definition->_id); iter != _testResults.end())
-			return &iter->second;
-		return &(_testResults[definition->_id] = TestResult());
+		return EditResult(definition->_parent);
 	}
 
 	TestRunner _testRunner;

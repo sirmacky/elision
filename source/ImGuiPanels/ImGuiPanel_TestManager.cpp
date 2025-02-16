@@ -2,7 +2,6 @@
 #include "Foundation/imgui.h"
 #include "TestFramework/TestManager.h"
 #include "TestFramework/TestRunner.h"
-#include "TestFramework/TestCategory.h"
 
 #include <algorithm>
 
@@ -31,70 +30,54 @@ void ImGuiPanel_TestManager::OnImGui()
 		OnImGui(category);
 }
 
-void ImGuiPanel_TestManager::OnImGui(const TestCategory& category)
+void ImGuiPanel_TestManager::OnImGui(const TestObject& category)
 {
-	if (auto cs = ImGui::Scoped::TreeNode(category.Name.c_str()))
+
+	//auto scope = ImGui::Scoped::TreeNode(category.Name.c_str());
+	///auto idScope = ImGui::Scoped::Id(category.Name);
+
+	auto cs = ImGui::Scoped::TreeNode(category.Name.c_str());
+	ImGui::SameLine();
+
+	if (ImGui::Button("Run"))
 	{
-		ImGui::SameLine();
-		if (ImGui::Button("Run"))
-		{
-			TestManager::Instance().Run(category);
-		}
-		OnImGuiDetails(category);
+		TestManager::Instance().Run(category);
 	}
-}
-
-void ImGuiPanel_TestManager::OnImGuiDetails(const TestCategory& category)
-{
-	auto indent = ImGui::Scoped::Indent(0.1f);
-
-	for (const auto& subCategory : category.SubCategories)
-		if (!subCategory->IsEmpty())
-			OnImGui(*subCategory.get());
-
-	for (const auto& test : category.Tests)
-		OnImGui(test);
-}
-
-
-void ImGuiPanel_TestManager::OnImGui(const TestDefinition& definition)
-{
-	auto scope = ImGui::Scoped::TreeNode(definition._name.c_str());
-	auto idScope = ImGui::Scoped::Id(definition._name);
-
-	const auto* result = TestManager::Instance().FetchResult(&definition);
-	auto status = TestManager::Instance().DetermineStatus(&definition);
+	auto status = TestManager::Instance().DetermineStatus(&category);
 
 	ImGui::SameLine();
 	ImGui::TextColored(ToColor(status), XEnumTraits<decltype(status)>::ToCString(status));
-
-	ImGui::SameLine();
-	if (ImGui::Button("Run"))
+	
+	if (cs)
 	{
-		TestManager::Instance().Run(definition);
-	}
+		auto indent = ImGui::Scoped::Indent(0.1f);
 
-	if (scope)
-	{
-		if (status == TestResultStatus::Failed)
+		for (const auto& subCategory : category.Children)
+			OnImGui(*subCategory.get());
+
+		if (category.Definition)
 		{
-			const auto& failure = result->_lastFailure.value();
-			// Print the error message
-			ImGui::TextColored(TestFailedColor, failure.FormattedString().c_str());
-
-			ImGui::SameLine();
-			if (ImGui::Button("goto"))
+			const auto* result = TestManager::Instance().FetchResult(category.Definition.get());
+			if (status == TestResultStatus::Failed)
 			{
-				// need the devenv path
+				const auto& failure = result->_lastFailure.value();
+				// Print the error message
+				ImGui::TextColored(TestFailedColor, failure.FormattedString().c_str());
 
-				// if has a devenv
+				ImGui::SameLine();
+				if (ImGui::Button("goto"))
+				{
+					// need the devenv path
 
-				std::string cmd = std::format("devenv.exe /edit {0} /command \"Edit.GoTo {1}\"", failure.filename(), failure.linenumber());
-				std::system(cmd.c_str());
+					// if has a devenv
+
+					std::string cmd = std::format("devenv.exe /edit {0} /command \"Edit.GoTo {1}\"", failure.filename(), failure.linenumber());
+					std::system(cmd.c_str());
+				}
 			}
-		}
 
-		ImGui::LabelText("Last Run:", "%F", result->_timeStarted);
-		ImGui::LabelText("Time Taken (ns):", "%d", result->TimeTaken());
+			ImGui::LabelText("Last Run:", "%F", result->_timeStarted);
+			ImGui::LabelText("Time Taken (ns):", "%d", result->TimeTaken());
+		}
 	}
 }

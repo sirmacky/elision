@@ -18,7 +18,8 @@
 #include <processthreadsapi.h>
 #undef min
 #undef max
-namespace ThreadUtils
+
+namespace lsn::thread_utils
 {
 	bool KillThread(std::thread& thread)
 	{
@@ -38,19 +39,20 @@ namespace ThreadUtils
 //===========================================================================================================
 void TestContext::SetFailure(const std::string& reason)
 {
-	SetFailure(test_failure(reason, Definition->_file, Definition->_lineNumber));
+	SetFailure(test_failure(reason, Definition->_parent->File, Definition->_parent->LineNumber));
 }
 
 void TestContext::SetFailure(const test_failure& reason)
 {
 	Result->SetFailure(reason);
+	Result->End(std::chrono::high_resolution_clock::now().time_since_epoch());
 }
 
 std::chrono::milliseconds TestContext::DetermineTimeout(const TestExecutionOptions& options) const
 {
 	using namespace std::chrono_literals;
 
-	auto timeout = Definition->_timeout;
+	auto timeout = Definition->Timeout;
 	if (timeout <= 0ms)
 		timeout = options.DefaultTimeOut;
 
@@ -64,7 +66,7 @@ std::chrono::milliseconds TestContext::DetermineTimeout(const TestExecutionOptio
 TestRunner::~TestRunner()
 {
 	if (_thread.joinable())
-		ThreadUtils::KillThread(_thread);
+		lsn::thread_utils::KillThread(_thread);
 }
 
 bool TestRunner::IsScheduled(const TestDefinition* test) const {
@@ -138,7 +140,7 @@ void TestRunner::RunAll(std::vector<TestContext>& tests, const TestExecutionOpti
 	std::array<std::vector<TestContext*>, static_cast<int>(TestConcurrency::Count)> _cohorts;
 	for (auto& context : tests)
 	{
-		auto concurrency = context.Definition->_concurrency;
+		auto concurrency = context.Definition->Concurrency;
 
 		concurrency = std::min(concurrency, options.MaximumConcurrency.value_or(concurrency));
 		concurrency = options.EnforcedConcurrency.value_or(concurrency);
@@ -231,14 +233,14 @@ void TestRunner::Run(TestContext& context, const TestExecutionOptions& options, 
 		if (delta >= timeout)
 		{
 			context.SetFailure(std::format("exceeded timeout duration of {}", timeout));
-			ThreadUtils::KillThread(thr);
+			lsn::thread_utils::KillThread(thr);
 			break;
 		}
 
 		if (token.stop_requested())
 		{
 			context.SetFailure(std::format("cancelled"));
-			ThreadUtils::KillThread(thr);
+			lsn::thread_utils::KillThread(thr);
 			break;
 		}
 	}
@@ -255,6 +257,7 @@ void TestRunner::RunInternal(TestContext& context, const TestExecutionOptions& o
 	{
 		context.Result->Begin(std::chrono::high_resolution_clock::now().time_since_epoch());
 		std::invoke(context.Definition->_test);
+		context.Result->End(std::chrono::high_resolution_clock::now().time_since_epoch());
 	}
 	catch (test_failure failure)
 	{
@@ -269,8 +272,6 @@ void TestRunner::RunInternal(TestContext& context, const TestExecutionOptions& o
 	{
 		context.SetFailure("uknown exception encountered");
 	}
-	
-	context.Result->End(std::chrono::high_resolution_clock::now().time_since_epoch());
 
 	if (auto timeout = context.DetermineTimeout(options); context.Result->TimeTaken() > timeout)
 	{

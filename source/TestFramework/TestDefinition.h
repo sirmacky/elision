@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+
 #include <functional>
 #include <chrono>
 
@@ -12,15 +12,12 @@ enum class TestConcurrency
 	Count,
 };
 
-struct TestCategory;
+struct TestObject;
 
 struct TestDefinition
 {
-	TestDefinition(const std::string& name, int lineNumber, const std::function<void()>& test)
+	TestDefinition(const std::function<void()>& test)
 	{
-		_id = name;
-		_name = name;
-		_lineNumber = lineNumber;
 		_test = test;
 	}
 
@@ -28,13 +25,94 @@ struct TestDefinition
 	TestDefinition(const TestDefinition&) = default;
 	TestDefinition() = default;
 
-	// the data
-	std::string _id;
-	std::string _name;
-	std::string _file;
 	std::function<void()> _test;
-	int _lineNumber;
-	const TestCategory* _category = nullptr;
-	TestConcurrency _concurrency = TestConcurrency::Any;
-	std::chrono::milliseconds _timeout{ 0 }; // default timeout
+	const TestObject* _parent = nullptr;
+	TestConcurrency Concurrency = TestConcurrency::Any;
+	std::chrono::milliseconds Timeout{ 0 }; // default timeout
+};
+
+#include <string>
+#include <vector>
+#include <memory>
+#include <functional>
+
+struct TestObject
+{
+	TestObject* Parent{ nullptr };
+	
+	std::function<void()> Initialize;
+
+	// TODO: Should these be a discriminated union?
+	std::vector<std::unique_ptr<TestObject> > Children;
+	std::unique_ptr<TestDefinition> Definition;
+
+	std::function<void()> TearDown;
+
+	std::string Id;
+	std::string Name;
+	std::string File;
+	int LineNumber{ 0 };
+
+	
+	TestObject(const std::string& name) 
+	{
+		Id = name;
+		Name = name; 
+	}
+
+	TestObject(const std::string& name, std::unique_ptr<TestDefinition> test)
+		: TestObject(name)
+	{
+		Definition = std::move(test);
+		Definition->_parent = this;
+	}
+
+	TestObject(const std::string& name, std::vector<std::unique_ptr<TestObject>>&& children)
+		: TestObject(name)
+	{
+		Children = std::move(children);
+		for (auto& child : Children)
+			child->Parent = this;
+	}
+
+	TestObject(TestObject&&) = default;
+	TestObject(const TestObject&) = default;
+	TestObject() = default;
+
+	TestObject* Add(std::unique_ptr<TestObject>&& child)
+	{
+		auto* test = Children.emplace_back(std::move(child)).get();
+		test->Parent = this;
+		return test;
+	}
+
+	// TODO: Move to cpp
+	void VisitAllTests(std::function<void(const TestObject*)> visitor) const
+	{
+		for (const auto& test : Children)
+		{
+			test->VisitAllTests(visitor);
+			std::invoke(visitor, test.get());
+		}
+	}
+
+	// TODO: Move to cpp
+	void VisitAllTests(std::function<void(const TestDefinition*)> visitor) const
+	{
+		for (const auto& test : Children)
+		{
+			test->VisitAllTests(visitor);
+		}
+
+		if (Definition)
+			std::invoke(visitor, Definition.get());
+	}
+
+	const TestObject* GetRoot() const
+	{
+		const TestObject* root = this;
+		while (root->Parent)
+			root = root->Parent;
+		return root;
+	}
 };
