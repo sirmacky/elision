@@ -10,8 +10,6 @@ ImplementXEnum(TestEnum,
     XValue(value3)
 );
 
-// TODO: Creat a test panel
-
 class TestPanel : public ImGuiPanel
 {
     int counter = 0;

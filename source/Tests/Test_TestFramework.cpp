@@ -73,9 +73,6 @@ DeclareTestCategory(Examples)
 {
 	using namespace std::chrono_literals;
 
-
-
-
 	// Simple tests can be declared with no arguments
 	DeclareTest(NoArguments)
 	{

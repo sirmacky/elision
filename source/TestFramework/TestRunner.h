@@ -1,15 +1,5 @@
 #pragma once
 
-// given a cohort of tests, this will ensure they are all run
-
-// So what behaviour do we want from the test co-ordinator
-
-// It should schedule tests concurrently to the best of it's ability
-// it should support std::stop_token
-// it should track what tests are currently running (including those that havent responded to the stop token)
-// it should synchronise the results that it can semi-regularly
-// it should monitor and support time outs
-
 #include <optional>
 #include <vector>
 #include <array>
@@ -23,7 +13,6 @@ namespace lsn::test_framework
 {
 	struct TestResult;
 	class test_failure;
-
 
 	struct TestExecutionOptions
 	{

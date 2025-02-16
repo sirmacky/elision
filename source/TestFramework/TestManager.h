@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <bitset>
 
 #include "TestResult.h"
 #include "TestObject.h"
@@ -24,101 +25,74 @@ ImplementXEnum(TestResultStatus,
 	XValue(Running)
 )
 
-/*
-ImplementXEnum(TestType,
-	XValue(Category),
-	XValue(Test)
-)
-*/
-
-// Queries to be supported
-// matching a name
-// categories only
-// tests only
-// That are scheduled, Not run, Successful, Failed, 
-// include all tests in matching categories
-#include <bitset>
-
-
-
 // this system doesnt need to be embedded, and can be done at a higher layer.
-
 namespace lsn::test_framework
 {
-struct TestQuery
-{
-	enum class TestType
+	struct TestQuery
 	{
-		Category,
-		Test,
+		std::string StrMatch;
+		std::bitset<XEnumTraits<TestResultStatus>::Count> StatusMask{ ~0ULL };
 	};
 
-	std::string StrMatch;
-	std::bitset<XEnumTraits<TestType>::Count> TypeMask{ ~0ULL };
-	std::bitset<XEnumTraits<TestResultStatus>::Count> StatusMask{ ~0ULL };
-};
+	struct TestManager
+	{
+		static TestManager& Instance()
+		{
+			static TestManager _instance;
+			return _instance;
+		}
+
+		TestExecutionOptions TestOptions;
+		std::vector<TestObject> _categories;
+
+		TestObject* Add(const std::string& name)
+		{
+			return &(_categories.emplace_back(name));
+
+			// TODO: :Add to the results map?
+		}
+
+		void RunAll();
+		void Run(const TestObject& category);
+		void Run(const TestDefinition& definition);
+		void Run(const std::unordered_set<const TestDefinition*> tests);
+
+		TestResultStatus DetermineStatus(const TestObject* category) const;
+		TestResultStatus DetermineStatus(const TestDefinition* definition) const;
 	
+		bool IsQueued(const TestDefinition* definition) const;
 
-struct TestManager
-{
-	static TestManager& Instance()
-	{
-		static TestManager _instance;
-		return _instance;
-	}
+		// TODO: Potentially change to a database for the results?
+		std::unordered_set<const TestDefinition*> Query()
+		{
+			// TODO: Support a string based query to query definition to get the test definitions
+			return std::unordered_set<const TestDefinition*>();
+		}
 
-	TestExecutionOptions TestOptions;
-	std::vector<TestObject> _categories;
+		std::unordered_set<const TestObject*> Query(const TestQuery& query) const;
 
-	TestObject* Add(const std::string& name)
-	{
-		return &(_categories.emplace_back(name));
+		const TestResult* FetchResult(const TestDefinition* definition) const
+		{
+			return const_cast<TestManager*>(this)->EditResult(definition);
+		}
 
-		// TODO: :Add to the results map?
-	}
+	private:
 
-	void RunAll();
-	void Run(const TestObject& category);
-	void Run(const TestDefinition& definition);
-	void Run(const std::unordered_set<const TestDefinition*> tests);
+		TestResult* EditResult(const TestObject* object)
+		{
+			if (auto iter = _testResults.find(object->Id); iter != _testResults.end())
+				return &iter->second;
+			return &(_testResults[object->Id] = TestResult());
+		}
 
-	TestResultStatus DetermineStatus(const TestObject* category) const;
-	TestResultStatus DetermineStatus(const TestDefinition* definition) const;
-	
-	bool IsQueued(const TestDefinition* definition) const;
+		TestResult* EditResult(const TestDefinition* definition)
+		{
+			return EditResult(definition->_parent);
+		}
 
-	// TODO: Potentially change to a database for the results?
-	std::unordered_set<const TestDefinition*> Query()
-	{
-		// TODO: Support a string based query to query definition to get the test definitions
-		return std::unordered_set<const TestDefinition*>();
-	}
+		TestRunner _testRunner;
 
-	std::unordered_set<const TestObject*> Query(const TestQuery& query) const;
-
-	const TestResult* FetchResult(const TestDefinition* definition) const
-	{
-		return const_cast<TestManager*>(this)->EditResult(definition);
-	}
-
-private:
-
-	TestResult* EditResult(const TestObject* object)
-	{
-		if (auto iter = _testResults.find(object->Id); iter != _testResults.end())
-			return &iter->second;
-		return &(_testResults[object->Id] = TestResult());
-	}
-
-
-	TestResult* EditResult(const TestDefinition* definition)
-	{
-		return EditResult(definition->_parent);
-	}
-
-	TestRunner _testRunner;
-
-	// TODO: The key should be the definition, not the string, when we save/load from disk it can be checked via query
-	std::unordered_map<std::string, TestResult> _testResults;
-};
-	}
+		// TODO: The key should be the definition, not the string, when we save/load from disk it can be checked via query
+		std::unordered_map<std::string, TestResult> _testResults;
+	};
+}
