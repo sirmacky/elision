@@ -25,7 +25,6 @@
     <ClCompile Include="source\ImGuiPanels\ImGuiPanel_TestManager.cpp" />
     <ClCompile Include="source\TestFramework\TestRunner.cpp" />
     <ClCompile Include="source\TestFramework\TestManager.cpp" />
-    <ClCompile Include="source\Tests\Test_TestCoordinator.cpp" />
     <ClCompile Include="source\Tests\Test_TestFramework.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -36,6 +35,7 @@
     <ClInclude Include="source\foundation\utils\StringUtils.h" />
     <ClInclude Include="source\ImGuiPanels\ImGuiPanel.h" />
     <ClInclude Include="source\ImGuiPanels\ImGuiPanel_TestManager.h" />
+    <ClInclude Include="source\TestFramework\TestObject.h" />
     <ClInclude Include="source\TestFramework\TestRunner.h" />
     <ClInclude Include="source\TestFramework\TestDefinition.h" />
     <ClInclude Include="source\TestFramework\TestManager.h" />

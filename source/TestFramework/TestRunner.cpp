@@ -1,8 +1,8 @@
 #include "TestRunner.h"
 
-#include "TestRunner.h"
-
 #include "TestResult.h"
+#include "TestObject.h"
+#include "TestDefinition.h"
 
 #include <thread>
 #include <vector>
@@ -14,10 +14,9 @@
 #include <future>
 
 #if defined _WIN32
+#define NOMINMAX
 #include <Windows.h>
 #include <processthreadsapi.h>
-#undef min
-#undef max
 
 namespace lsn::thread_utils
 {
@@ -35,6 +34,9 @@ namespace lsn::thread_utils
 }
 
 #endif
+
+namespace lsn::test_framework
+{
 
 //===========================================================================================================
 void TestContext::SetFailure(const std::string& reason)
@@ -279,3 +281,4 @@ void TestRunner::RunInternal(TestContext& context, const TestExecutionOptions& o
 	}
 }
 
+}

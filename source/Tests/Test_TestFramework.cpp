@@ -5,6 +5,8 @@
 #include <chrono>
 #include <cmath>
 
+using namespace lsn::test_framework;
+
 namespace MathUtils
 {
 	constexpr auto SignOf(auto val)

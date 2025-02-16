@@ -2,8 +2,11 @@
 #include "Foundation/imgui.h"
 #include "TestFramework/TestManager.h"
 #include "TestFramework/TestRunner.h"
+#include "TestFramework/TestObject.h"
 
 #include <algorithm>
+
+using namespace lsn::test_framework;
 
 constexpr ImVec4 TestPassedColor{ 0.2f, 0.84f, 0.2f, 1.0f };
 constexpr ImVec4 TestFailedColor{ 0.84f, 0.2f, 0.2f, 1.0f };

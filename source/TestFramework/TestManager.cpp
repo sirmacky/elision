@@ -2,6 +2,8 @@
 #include "TestRunner.h"
 #include "foundation/utils/StringUtils.h"
 
+using namespace lsn::test_framework;
+
 TestResultStatus TestManager::DetermineStatus(const TestObject* category) const
 {
 	TestResultStatus categoryStatus = TestResultStatus::Passed;

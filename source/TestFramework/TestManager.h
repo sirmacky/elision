@@ -6,7 +6,7 @@
 #include <unordered_set>
 
 #include "TestResult.h"
-#include "TestDefinition.h"
+#include "TestObject.h"
 #include "TestRunner.h"
 
 // TODO:
@@ -43,6 +43,8 @@ ImplementXEnum(TestType,
 
 // this system doesnt need to be embedded, and can be done at a higher layer.
 
+namespace lsn::test_framework
+{
 struct TestQuery
 {
 	enum class TestType
@@ -119,3 +121,4 @@ private:
 	// TODO: The key should be the definition, not the string, when we save/load from disk it can be checked via query
 	std::unordered_map<std::string, TestResult> _testResults;
 };
+	}

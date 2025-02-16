@@ -19,67 +19,71 @@
 
 #include "TestDefinition.h"
 
-
-struct TestExecutionOptions
+namespace lsn::test_framework
 {
-	TestExecutionOptions& ForceOntoMainThread() { MaxNumberOfSimultaneousThreads = 0; return *this; }
-
-	int MaxNumberOfSimultaneousThreads = 6;
-	int MinimumNumberOfTestsPerThread = 2;
-	float Variance = 0.5f;
-	std::chrono::milliseconds DefaultTimeOut{ 5000 };
+	struct TestResult;
+	class test_failure;
 
 
-	// allows us to enforce the concurrency type if there are problems
-	std::optional<TestConcurrency> MaximumConcurrency;
-	std::optional<TestConcurrency> EnforcedConcurrency;
-	std::optional<std::chrono::milliseconds> MaximumTimeout;
-};
-
-struct TestResult;
-class test_failure;
-
-struct TestContext
-{
-	// TODO: Should this be the object?
-	const TestDefinition* Definition;
-	TestResult* Result;
-
-	void SetFailure(const std::string& reason);
-	void SetFailure(const test_failure& failure);
-
-	std::chrono::milliseconds DetermineTimeout(const TestExecutionOptions& options) const;
-};
-
-struct TestRunner
-{
-	TestRunner() = default;
-	~TestRunner();
-
-	enum class Status
+	struct TestExecutionOptions
 	{
-		Idle,
-		Running,
-		Cancelling,
+		TestExecutionOptions& ForceOntoMainThread() { MaxNumberOfSimultaneousThreads = 0; return *this; }
+
+		int MaxNumberOfSimultaneousThreads = 6;
+		int MinimumNumberOfTestsPerThread = 2;
+		float Variance = 0.5f;
+		std::chrono::milliseconds DefaultTimeOut{ 5000 };
+
+
+		// allows us to enforce the concurrency type if there are problems
+		std::optional<TestConcurrency> MaximumConcurrency;
+		std::optional<TestConcurrency> EnforcedConcurrency;
+		std::optional<std::chrono::milliseconds> MaximumTimeout;
 	};
 
-	std::atomic<Status> Status{ Status::Idle };
 
-	bool IsScheduled(const TestDefinition* test) const;
+	struct TestContext
+	{
+		// TODO: Should this be the object?
+		const TestDefinition* Definition;
+		TestResult* Result;
 
-	void Run(std::vector<TestContext>& tests, const TestExecutionOptions& options = TestExecutionOptions());
-	void Cancel();
-	void Join();
+		void SetFailure(const std::string& reason);
+		void SetFailure(const test_failure& failure);
 
-	std::unordered_set<const TestDefinition*> _tests;
-	std::stop_source _stopSource{};
-	std::thread _thread;
+		std::chrono::milliseconds DetermineTimeout(const TestExecutionOptions& options) const;
+	};
 
-	static void RunAll(std::vector<TestContext>& tests, const TestExecutionOptions& options, std::stop_token token);
-	static void RunAsync(std::span<TestContext* const> tests, const TestExecutionOptions& options, std::stop_token token);
-	static void Run(TestContext& context, const TestExecutionOptions& options, std::stop_token token);
-private:
-	static void RunInternal(TestContext& context, const TestExecutionOptions& options);
+	struct TestRunner
+	{
+		TestRunner() = default;
+		~TestRunner();
 
-	void OnFinish();
-};
+		enum class Status
+		{
+			Idle,
+			Running,
+			Cancelling,
+		};
+
+		std::atomic<Status> Status{ Status::Idle };
+
+		bool IsScheduled(const TestDefinition* test) const;
+
+		void Run(std::vector<TestContext>& tests, const TestExecutionOptions& options = TestExecutionOptions());
+		void Cancel();
+		void Join();
+
+		std::unordered_set<const TestDefinition*> _tests;
+		std::stop_source _stopSource{};
+		std::thread _thread;
+
+		static void RunAll(std::vector<TestContext>& tests, const TestExecutionOptions& options, std::stop_token token);
+		static void RunAsync(std::span<TestContext* const> tests, const TestExecutionOptions& options, std::stop_token token);
+		static void Run(TestContext& context, const TestExecutionOptions& options, std::stop_token token);
+	private:
+		static void RunInternal(TestContext& context, const TestExecutionOptions& options);
+
+		void OnFinish();
+	};
+}

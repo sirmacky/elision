@@ -62,8 +62,8 @@ FOR_EACH_MACRO(ImplementTestRequirements_, __VA_ARGS__) \
 .Generate()); \
 inline static void test_name (FOR_EACH_MACRO(ImplementTestArguments_, __VA_ARGS__)) 
 
-#define DeclareTestSubCategory(parent, name) namespace name {TestObject* Category = parent::Category->Add(#name); } namespace name
-#define DeclareTestCategory(name) namespace name { TestObject* Category = TestManager::Instance().Add(#name); } namespace name
+#define DeclareTestSubCategory(parent, name) namespace name {lsn::test_framework::TestObject* Category = parent::Category->Add(#name); } namespace name
+#define DeclareTestCategory(name) namespace name { TestObject* Category = lsn::test_framework::TestManager::Instance().Add(#name); } namespace name
 #define DeclareTest(...) DeclareTest_Internal( Category, __VA_ARGS__)
 
 namespace lsn::test_framework

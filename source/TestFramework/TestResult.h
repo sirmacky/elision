@@ -4,7 +4,8 @@
 #include <string>
 #include <format>
 
-
+namespace lsn::test_framework
+{
 
 
 class test_failure
@@ -39,15 +40,11 @@ private:
 	int _errorLine;
 };
 
-
-
 struct TestResult
 {
 	std::chrono::nanoseconds _timeStarted = std::chrono::nanoseconds::zero();
 	std::chrono::nanoseconds _timeEnded = std::chrono::nanoseconds::zero();
 	std::optional<test_failure> _lastFailure;
-
-	
 
 	void Reset()
 	{
@@ -91,3 +88,5 @@ struct TestResult
 
 	operator bool() const { return HasPassed(); }
 };
+
+}
