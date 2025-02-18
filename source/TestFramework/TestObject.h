@@ -16,7 +16,6 @@ struct TestObject
 
 	std::function<void()> Initialize;
 
-	// TODO: Should these be a discriminated union?
 	std::vector<std::unique_ptr<TestObject> > Children;
 	std::unique_ptr<TestDefinition> Definition;
 
@@ -60,6 +59,17 @@ struct TestObject
 		return test;
 	}
 
+	// TODO: Move to cpp, and find a cleaner way of doing this
+	std::vector<const TestObject*> GetChildren() const
+	{
+		std::vector<const TestObject*> children;
+		children.reserve(Children.size());
+		for (const auto& child : Children)
+			children.push_back(child.get());
+		return children;
+	}
+
+	
 	// TODO: Move to cpp
 	void VisitAllTests(std::function<void(const TestObject*)> visitor) const
 	{

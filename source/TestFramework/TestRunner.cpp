@@ -223,10 +223,14 @@ void TestRunner::Run(TestContext context, const TestExecutionOptions& options, s
 
 	auto timeout = context.DetermineTimeout(options);
 
+	// TODO: This has a crash issue as the context can be destroyed while the thread is being killed at the assignment stage.
+	// Need a static synchronization system that will allow these to communicate better. (id's in a set maybe?)
 	std::atomic<bool> complete{ false };
 	std::thread thr([c=context, o=options, &complete]() mutable {
+		
 		TestRunner::RunInternal(c, o);
 		complete = true;
+		
 	});
 
 	auto startTime = std::chrono::high_resolution_clock::now().time_since_epoch();

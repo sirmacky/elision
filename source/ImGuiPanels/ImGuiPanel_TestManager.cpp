@@ -17,6 +17,27 @@ namespace TestStatusColors
 	constexpr ImVec4 Running      { 0.20f, 0.64f, 0.20f, 1.0f };
 }
 
+bool CanRunTest(TestResultStatus status)
+{
+	return !TestManager::Instance().IsRunningTests();
+}
+
+void OpenTestFileToIssue(const TestObject& test)
+{
+	// if there's a test failure then goto it's line definition
+	int lineNumber = test.LineNumber;
+	if (const auto* result = TestManager::Instance().FetchResult(&test))
+	{
+		if (result->_lastFailure)
+		{
+			lineNumber = result->_lastFailure->linenumber();
+		}
+	}
+
+	// TODO: we may need to find devenv
+	std::string cmd = std::format("devenv.exe /edit {0} /command \"Edit.GoTo {1}\"", test.File, test.LineNumber);
+	std::system(cmd.c_str());
+}
 
 constexpr ImVec4 ToColor(TestResultStatus status)
 {
@@ -32,10 +53,22 @@ constexpr ImVec4 ToColor(TestResultStatus status)
 	return TestStatusColors::NotRun;
 }
 
+constexpr const char* ToCString(TestConcurrency concurrency)
+{
+	switch (concurrency)
+	{
+		case TestConcurrency::Exclusive: return "Excl";
+		case TestConcurrency::Privileged: return "Priv";
+		case TestConcurrency::Any: return "Mult";
+	}
+
+	return "<unknown>";
+}
+
 void ImGuiPanel_TestManager::OnImGui()
 {
 	auto& testManager = TestManager::Instance();
-	if (ImGui::Button("Test All"))
+	if (!testManager.IsRunningTests() && ImGui::Button("Test All"))
 	{
 		testManager.RunAll();
 	}
@@ -49,54 +82,67 @@ void ImGuiPanel_TestManager::OnImGui()
 		OnImGui(category);
 }
 
-void ImGuiPanel_TestManager::OnImGui(const TestObject& category)
+void DisplayTestDetails(const TestObject& test, TestResultStatus status)
 {
 
-	//auto scope = ImGui::Scoped::TreeNode(category.Name.c_str());
-	///auto idScope = ImGui::Scoped::Id(category.Name);
-
-	auto cs = ImGui::Scoped::TreeNode(category.Name.c_str());
-	ImGui::SameLine();
-
-	if (ImGui::Button("Run"))
+	if (CanRunTest(status) && ImGui::Button("Run"))
 	{
-		TestManager::Instance().Run(category);
+		TestManager::Instance().Run(test);
 	}
-	auto status = TestManager::Instance().DetermineStatus(&category);
+
+	ImGui::SameLine();
+	if (ImGui::Button("Goto"))
+	{
+		OpenTestFileToIssue(test);
+	}
 
 	ImGui::SameLine();
 	ImGui::TextColored(ToColor(status), XEnumTraits<decltype(status)>::ToCString(status));
-	
-	if (cs)
+}
+
+void ImGuiPanel_TestManager::OnImGui(const TestObject& test)
+{
+	auto id = ImGui::Scoped::Id(test.Id);
+	auto status = TestManager::Instance().DetermineStatus(&test);
+
+	if (test.Children.size())
 	{
-		auto indent = ImGui::Scoped::Indent(0.1f);
+		auto cs = ImGui::Scoped::TreeNode(test.Name.c_str());
+		ImGui::SameLine();
+		DisplayTestDetails(test, status);
 
-		for (const auto& subCategory : category.Children)
-			OnImGui(*subCategory.get());
-
-		if (category.Definition)
+		if (cs)
 		{
-			const auto* result = TestManager::Instance().FetchResult(category.Definition.get());
-			if (status == TestResultStatus::Failed)
+			auto indent = ImGui::Scoped::Indent(0.1f);
+
+			// order the results based on depth of sub results.
+			auto children = test.GetChildren();
+			std::sort(children.begin(), children.end(), [](const auto* lhs, const auto* rhs)
 			{
-				const auto& failure = result->_lastFailure.value();
-				// Print the error message
-				ImGui::TextColored(TestStatusColors::Failed, failure.FormattedString().c_str());
+				return lhs->Children.size() > rhs->Children.size();
+			});
+			for (const auto* child: children)
+				OnImGui(*child);
+		}
+	}
+	else if (test.Definition)
+	{
+		ImGui::Text("%s (%s)", test.Name.c_str(), ToCString(test.Definition->Concurrency));
+		ImGui::SameLine();
+		DisplayTestDetails(test, status);
 
-				ImGui::SameLine();
-				if (ImGui::Button("goto"))
-				{
-					// need the devenv path
+		const auto* result = TestManager::Instance().FetchResult(&test);
+		if (result)
+		{
+			ImGui::SameLine();
+			ImGui::Text("Time Taken %d (ns)", result->TimeTaken());
+		}
 
-					// if has a devenv
-
-					std::string cmd = std::format("devenv.exe /edit {0} /command \"Edit.GoTo {1}\"", failure.filename(), failure.linenumber());
-					std::system(cmd.c_str());
-				}
-			}
-
-			ImGui::LabelText("Last Run:", "%F", result->_timeStarted);
-			ImGui::LabelText("Time Taken (ns):", "%d", result->TimeTaken());
+		if (status == TestResultStatus::Failed)
+		{
+			const auto& failure = result->_lastFailure.value();
+			// Print the error message
+			ImGui::TextColored(TestStatusColors::Failed, failure.FormattedString().c_str());
 		}
 	}
 }

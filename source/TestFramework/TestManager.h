@@ -77,6 +77,11 @@ namespace lsn::test_framework
 			return const_cast<TestManager*>(this)->EditResult(definition);
 		}
 
+		const TestResult* FetchResult(const TestObject* object) const
+		{
+			return const_cast<TestManager*>(this)->EditResult(object);
+		}
+
 	private:
 
 		TestResult* EditResult(const TestObject* object)
