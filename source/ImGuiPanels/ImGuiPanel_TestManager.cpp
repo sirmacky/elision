@@ -8,28 +8,44 @@
 
 using namespace lsn::test_framework;
 
-constexpr ImVec4 TestPassedColor{ 0.2f, 0.84f, 0.2f, 1.0f };
-constexpr ImVec4 TestFailedColor{ 0.84f, 0.2f, 0.2f, 1.0f };
-constexpr ImVec4 TestNotRunColor{ 0.3f, 0.4f, 0.2f, 1.0f };
+namespace TestStatusColors
+{
+	constexpr ImVec4 Passed       { 0.20f, 0.84f, 0.20f, 1.0f };
+	constexpr ImVec4 NotRun       { 0.30f, 0.40f, 0.20f, 1.0f };
+	constexpr ImVec4 Failed       { 0.84f, 0.20f, 0.20f, 1.0f };
+	constexpr ImVec4 WaitingToRun { 0.30f, 0.40f, 0.40f, 1.0f };
+	constexpr ImVec4 Running      { 0.20f, 0.64f, 0.20f, 1.0f };
+}
+
 
 constexpr ImVec4 ToColor(TestResultStatus status)
 {
-	if (status == TestResultStatus::Passed)
-		return TestPassedColor;
-	if (status == TestResultStatus::Failed)
-		return TestFailedColor;
-
-	return TestNotRunColor;
+	switch (status)
+	{
+		case TestResultStatus::Passed: return TestStatusColors::Passed;
+		case TestResultStatus::NotRun: return TestStatusColors::NotRun;
+		case TestResultStatus::Failed: return TestStatusColors::Failed;
+		case TestResultStatus::WaitingToRun: return TestStatusColors::WaitingToRun;
+		case TestResultStatus::Running: return TestStatusColors::Running;
+	}
+		
+	return TestStatusColors::NotRun;
 }
 
 void ImGuiPanel_TestManager::OnImGui()
 {
+	auto& testManager = TestManager::Instance();
 	if (ImGui::Button("Test All"))
 	{
-		TestManager::Instance().RunAll();
+		testManager.RunAll();
 	}
 
-	for (const auto& category : TestManager::Instance()._categories)
+	if (testManager.IsRunningTests() && ImGui::Button("Cancel"))
+	{
+		testManager.Cancel();
+	}
+
+	for (const auto& category : testManager._categories)
 		OnImGui(category);
 }
 
@@ -65,7 +81,7 @@ void ImGuiPanel_TestManager::OnImGui(const TestObject& category)
 			{
 				const auto& failure = result->_lastFailure.value();
 				// Print the error message
-				ImGui::TextColored(TestFailedColor, failure.FormattedString().c_str());
+				ImGui::TextColored(TestStatusColors::Failed, failure.FormattedString().c_str());
 
 				ImGui::SameLine();
 				if (ImGui::Button("goto"))

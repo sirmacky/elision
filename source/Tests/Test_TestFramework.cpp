@@ -19,7 +19,7 @@ namespace MathUtils
 	}
 }
 
-namespace Tests::ValueSources
+namespace Example::ValueSources
 {
 	template<int Start, int End>
 	auto IntegerRange()
@@ -86,8 +86,8 @@ DeclareTestCategory(Examples)
 		ValueCase(44),
 		// Or from value sources as either a vector<T> or vector<tuple<T>>
 		// You can mix and match multiple sources, and value cases together simultaneously
-		ValueSource(Tests::ValueSources::IntegerRange<1, 5>),
-		ValueSource(Tests::ValueSources::SingleValueTupleRange<6, 10>))
+		ValueSource(Example::ValueSources::IntegerRange<1, 5>),
+		ValueSource(Example::ValueSources::SingleValueTupleRange<6, 10>))
 	{
 		AssertThat(a < 1337);
 	}
@@ -98,8 +98,8 @@ DeclareTestCategory(Examples)
 	DeclareTest(MultipleArguments,
 		ValueCase(42, 43),
 		ValueCase(44, 45),
-		ValueSource(Tests::ValueSources::MultipleValueTupleData<1, 5>),
-		ValueSource(Tests::ValueSources::MultipleValueTupleData<6, 10>),
+		ValueSource(Example::ValueSources::MultipleValueTupleData<1, 5>),
+		ValueSource(Example::ValueSources::MultipleValueTupleData<6, 10>),
 		Arguments(int a, int b))
 	{
 		AssertThat(a < b);
@@ -108,11 +108,11 @@ DeclareTestCategory(Examples)
 	// Additional test options are also availble
 	DeclareTest(Options,
 		/* Configurable concurrency requirements allow tests to be run
-		 * exclusively: can be the only test running
-		 * privelaged: can only be run on the privelaged job thread
-		 * multithreaded (default): Can run on any testing job thread
+		 * Exclusive: can be the only test running
+		 * Privileged: can only be run on the privelaged job thread
+		 * Multithreaded (default): Can run on any testing job thread
 	   //*/
-		WithRequirement(TestConcurrency::Exclusive),
+		WithConcurrency(TestConcurrency::Exclusive),
 		// Tests are automatically stopped and failed if they exceed the timeout
 		Timeout(15ms))
 	{
@@ -120,77 +120,46 @@ DeclareTestCategory(Examples)
 	}
 }
 
-DeclareTestCategory(FrameworkStructure)
-{
-	using namespace std::chrono_literals;
-
-	DeclareTest(TestWithNoArgs) 
-	{}
-
-	DeclareTest(TestWithTimeout, Timeout(15ms))
-	{}
-
-	DeclareTest(TestWithThreadPriority, WithRequirement(TestConcurrency::Exclusive))
-	{}
-
-	DeclareTest(TestValueSources, 
-		ValueSource(Tests::ValueSources::MultipleValueTupleData<1, 10>),
-		ValueCase(42, 43),
-		Arguments(int a, int b))
-	{
-		AssertThat(a < b);
-	}
-
-	DeclareTest(TestMultipleValueSources,
-		ValueSource(Tests::ValueSources::IntegerRange<1,10>),
-		ValueSource(Tests::ValueSources::SingleValueTupleRange<1,10>),
-		ValueCase(42),
-		ValueCase(1337),
-		Arguments(int a))
-	{
-		AssertThat(a != 1337);
-	}
-}
-
 DeclareTestCategory(FrameworkConcurrency)
 {
 	using namespace std::chrono_literals;
 
-	DeclareTest(ExclusiveSleeps, WithRequirement(TestConcurrency::Exclusive),
-		ValueSource(Tests::ValueSources::IntegerRange<1, 20>),
+	void WaitFor(const std::chrono::seconds& time)
+	{
+		auto start = std::chrono::high_resolution_clock::now().time_since_epoch();
+
+		while (std::chrono::high_resolution_clock::now().time_since_epoch() - start < time)
+		{}
+	}
+
+	DeclareTest(ExclusiveWait, WithConcurrency(TestConcurrency::Exclusive),
+		ValueSource(Example::ValueSources::IntegerRange<1, 20>),
 		Arguments(int _))
 	{
-		std::this_thread::sleep_for(1s);
+		WaitFor(1s);
 	}
 
-	DeclareTest(PrivelagedSleeps, WithRequirement(TestConcurrency::Privelaged),
-		ValueSource(Tests::ValueSources::IntegerRange<1, 20>),
+	DeclareTest(PrivilegedWait, WithConcurrency(TestConcurrency::Privileged),
+		ValueSource(Example::ValueSources::IntegerRange<1, 20>),
 		Arguments(int _))
 	{
-		std::this_thread::sleep_for(1s);
+		WaitFor(1s);
 	}
 
-	DeclareTest(AnySleeps, WithRequirement(TestConcurrency::Any),
-		ValueSource(Tests::ValueSources::IntegerRange<1, 100>),
+	DeclareTest(AnyWait, WithConcurrency(TestConcurrency::Any),
+		ValueSource(Example::ValueSources::IntegerRange<1, 100>),
 		Arguments(int _))
 	{
-		std::this_thread::sleep_for(1s);
+		WaitFor(1s);
 	}
 
-	DeclareTest(SleepingTimeout, Timeout(1s))
+	DeclareTest(WaitTimeout, Timeout(1s))
 	{
-		std::this_thread::sleep_for(5s);
+		WaitFor(5s);
 	}
 
-	DeclareTest(InfiniteLoop, Timeout(1s))
+	DeclareTest(InfiniteLoopTimeout, Timeout(1s))
 	{
 		while (true) {}
 	}
 }
-
-
-
-
-
-
-

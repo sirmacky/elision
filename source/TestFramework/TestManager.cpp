@@ -111,3 +111,17 @@ void TestManager::Run(const std::unordered_set<const TestDefinition*> tests)
 
 	_testRunner.Run(contexts, TestOptions);
 }
+
+bool TestManager::IsRunningTests() const
+{
+	return _testRunner.Status == TestRunner::Status::Running;
+}
+
+bool TestManager::Cancel()
+{
+	if (!IsRunningTests())
+		return false;
+
+	_testRunner.Cancel();
+	return true;
+}

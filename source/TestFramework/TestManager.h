@@ -48,14 +48,15 @@ namespace lsn::test_framework
 		TestObject* Add(const std::string& name)
 		{
 			return &(_categories.emplace_back(name));
-
-			// TODO: :Add to the results map?
 		}
 
 		void RunAll();
 		void Run(const TestObject& category);
 		void Run(const TestDefinition& definition);
 		void Run(const std::unordered_set<const TestDefinition*> tests);
+
+		bool IsRunningTests() const;
+		bool Cancel();
 
 		TestResultStatus DetermineStatus(const TestObject* category) const;
 		TestResultStatus DetermineStatus(const TestDefinition* definition) const;

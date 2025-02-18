@@ -39,19 +39,19 @@ namespace lsn::test_framework::details
 #define ImplementTestArguments_ValueSource(...) 
 #define ImplementTestArguments_ValueCase(...) 
 #define ImplementTestArguments_Arguments(...) __VA_ARGS__
-#define ImplementTestArguments_WithRequirement(...)
+#define ImplementTestArguments_WithConcurrency(...)
 #define ImplementTestArguments_Timeout(...)
 
 #define ImplementTestDataSource_ValueSource(...) .AddTestsFromSource( []() { return __VA_ARGS__ ();} )
 #define ImplementTestDataSource_ValueCase(...) .AddTestsFromValues(__VA_ARGS__)
 #define ImplementTestDataSource_Arguments(...)
-#define ImplementTestDataSource_WithRequirement(...)
+#define ImplementTestDataSource_WithConcurrency(...)
 #define ImplementTestDataSource_Timeout(...)
 
 #define ImplementTestRequirements_ValueSource(...)
 #define ImplementTestRequirements_ValueCase(...)
 #define ImplementTestRequirements_Arguments(...)
-#define ImplementTestRequirements_WithRequirement(...) .SetRequirement(__VA_ARGS__)
+#define ImplementTestRequirements_WithConcurrency(...) .SetRequirement(__VA_ARGS__)
 #define ImplementTestRequirements_Timeout(...) .SetTimeout(__VA_ARGS__)
 
 

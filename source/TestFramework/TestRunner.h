@@ -69,7 +69,7 @@ namespace lsn::test_framework
 
 		static void RunAll(std::vector<TestContext>& tests, const TestExecutionOptions& options, std::stop_token token);
 		static void RunAsync(std::span<TestContext* const> tests, const TestExecutionOptions& options, std::stop_token token);
-		static void Run(TestContext& context, const TestExecutionOptions& options, std::stop_token token);
+		static void Run(TestContext context, const TestExecutionOptions& options, std::stop_token token);
 	private:
 		static void RunInternal(TestContext& context, const TestExecutionOptions& options);
 

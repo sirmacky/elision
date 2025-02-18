@@ -156,9 +156,9 @@ void TestRunner::RunAll(std::vector<TestContext>& tests, const TestExecutionOpti
 		return;
 
 	// Create worker threads for our remainder, and allow them to take from the Any pool
-	// we will maintain as our own worker thread and process the Privelaged, before assisting with the remaining pool
+	// we will maintain as our own worker thread and process the Privileged, before assisting with the remaining pool
 	const auto& remainder = _cohorts[static_cast<int>(TestConcurrency::Any)];
-	const auto& privelaged = _cohorts[static_cast<int>(TestConcurrency::Privelaged)];
+	const auto& privelaged = _cohorts[static_cast<int>(TestConcurrency::Privileged)];
 
 	int numAdditionalThreads = 0;
 	// determine how many additional threads will be needed 
@@ -216,15 +216,16 @@ void TestRunner::RunAsync(std::span<TestContext* const> tests, const TestExecuti
 	}
 }
 
-void TestRunner::Run(TestContext& context, const TestExecutionOptions& options, std::stop_token token)
+// Intentional copy of the context
+void TestRunner::Run(TestContext context, const TestExecutionOptions& options, std::stop_token token)
 {
 	using namespace std::chrono_literals;
-	
+
 	auto timeout = context.DetermineTimeout(options);
 
 	std::atomic<bool> complete{ false };
-	std::thread thr([&]()	{
-		TestRunner::RunInternal(context, options);
+	std::thread thr([c=context, o=options, &complete]() mutable {
+		TestRunner::RunInternal(c, o);
 		complete = true;
 	});
 
@@ -234,15 +235,16 @@ void TestRunner::Run(TestContext& context, const TestExecutionOptions& options, 
 		auto delta = std::chrono::high_resolution_clock::now().time_since_epoch() - startTime;
 		if (delta >= timeout)
 		{
-			context.SetFailure(std::format("exceeded timeout duration of {}", timeout));
 			lsn::thread_utils::KillThread(thr);
+			context.SetFailure(std::format("exceeded timeout duration of {}", timeout));
 			break;
 		}
-
+		
 		if (token.stop_requested())
 		{
+			// TODO: This causing problems currently.
+			// lsn::thread_utils::KillThread(thr);
 			context.SetFailure(std::format("cancelled"));
-			lsn::thread_utils::KillThread(thr);
 			break;
 		}
 	}

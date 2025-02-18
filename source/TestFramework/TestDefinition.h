@@ -8,7 +8,7 @@ namespace lsn::test_framework
 	enum class TestConcurrency
 	{
 		Exclusive, // This test must be run exclusively against all others
-		Privelaged, // only run one of these at a time. 
+		Privileged, // only run one of these at a time. 
 		Any, // this test can be run on any thread any time
 		Count,
 	};
