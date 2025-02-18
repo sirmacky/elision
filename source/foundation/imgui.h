@@ -4,6 +4,7 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include <XEnum.h>
 #include <functional>
+#include <optional>
 
 namespace ImGui
 {
@@ -31,6 +32,35 @@ namespace ImGui
 		return origValue != value;
 	}
 	*/
+
+	template <XEnumValue T>
+	bool Combo(const char* const label, std::optional<T>& value, ImGuiComboFlags flags = 0)
+	{
+		auto origValue = value;
+
+		if (ImGui::BeginCombo(label, XEnumTraits<T>::ToCString(value), flags))
+		{
+			if (ImGui::Selectable("<none>", !value.has_value()))
+			{
+				value.reset();
+			}
+			if (!value.has_value())
+				ImGui::SetItemDefaultFocus();
+
+			for (const auto& option : XEnumTraits<T>::Values)
+			{
+				bool is_selected = value.has_value() && value.get() == option;
+				if (ImGui::Selectable(XEnumTraits<T>::ToCString(option), is_selected))
+					value = option;
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+
+			ImGui::EndCombo();
+		}
+
+		return origValue != value;
+	}
 
 	template <XEnumValue T>
 	bool Combo(const char* const label, T& value, ImGuiComboFlags flags = 0)
@@ -64,12 +94,14 @@ namespace ImGui
 	struct Scope
 	{
 		std::function<void()> _release = nullptr;
-
 		Scope(const std::function<void()>& release) {
 			_release = release;
 		}
+
+		constexpr Scope() = default;
 		constexpr Scope(Scope&&) = default;
 		constexpr Scope(const Scope& other) = default;
+
 		~Scope() {
 			if (_release)
 				std::invoke(_release);

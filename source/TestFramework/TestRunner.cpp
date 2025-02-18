@@ -203,8 +203,6 @@ void TestRunner::RunAll(std::vector<TestContext>& tests, const TestExecutionOpti
 	// and we're done!
 }
 
-
-
 void TestRunner::RunAsync(std::span<TestContext* const> tests, const TestExecutionOptions& options, std::stop_token token)
 {
 	for (auto* test : tests)
@@ -225,6 +223,8 @@ void TestRunner::Run(TestContext context, const TestExecutionOptions& options, s
 
 	// TODO: This has a crash issue as the context can be destroyed while the thread is being killed at the assignment stage.
 	// Need a static synchronization system that will allow these to communicate better. (id's in a set maybe?)
+	// potentially a second stop token?
+	
 	std::atomic<bool> complete{ false };
 	std::thread thr([c=context, o=options, &complete]() mutable {
 		

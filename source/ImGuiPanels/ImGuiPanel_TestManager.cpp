@@ -17,6 +17,9 @@ namespace TestStatusColors
 	constexpr ImVec4 Running      { 0.20f, 0.64f, 0.20f, 1.0f };
 }
 
+
+TestExecutionOptions _options;
+
 bool CanRunTest(TestResultStatus status)
 {
 	return !TestManager::Instance().IsRunningTests();
@@ -37,6 +40,20 @@ void OpenTestFileToIssue(const TestObject& test)
 	// TODO: we may need to find devenv
 	std::string cmd = std::format("devenv.exe /edit {0} /command \"Edit.GoTo {1}\"", test.File, test.LineNumber);
 	std::system(cmd.c_str());
+}
+
+void Edit(TestExecutionOptions& options)
+{
+	ImGui::SliderInt("MaxNumberOfSimultaneousThreads", &options.MaxNumberOfSimultaneousThreads, 0, 12);
+	ImGui::SliderInt("MinimumNumberOfTestsPerThread", &options.MinimumNumberOfTestsPerThread, 1, 30);
+	
+	// TODO: Expose to xenum
+	// ImGui::Combo("MaximumConcurrency", options.MaximumConcurrency);
+	// ImGui::Combo("EnforcedConcurrency", options.EnforcedConcurrency);
+
+	if (ImGui::Button("Reset to defaults"))
+		options = { };
+
 }
 
 constexpr ImVec4 ToColor(TestResultStatus status)
@@ -77,6 +94,8 @@ void ImGuiPanel_TestManager::OnImGui()
 	{
 		testManager.Cancel();
 	}
+
+	Edit(testManager.TestOptions);
 
 	for (const auto& category : testManager._categories)
 		OnImGui(category);

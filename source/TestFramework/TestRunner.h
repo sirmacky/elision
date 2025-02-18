@@ -20,7 +20,6 @@ namespace lsn::test_framework
 
 		int MaxNumberOfSimultaneousThreads = 6;
 		int MinimumNumberOfTestsPerThread = 2;
-		float Variance = 0.5f;
 		std::chrono::milliseconds DefaultTimeOut{ 5000 };
 
 
