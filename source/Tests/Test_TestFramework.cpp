@@ -127,7 +127,6 @@ DeclareTestCategory(FrameworkConcurrency)
 	void WaitFor(const std::chrono::seconds& time)
 	{
 		auto start = std::chrono::high_resolution_clock::now().time_since_epoch();
-
 		while (std::chrono::high_resolution_clock::now().time_since_epoch() - start < time)
 		{}
 	}

@@ -25,11 +25,11 @@ namespace lsn::thread_utils
 		if (!thread.joinable())
 			return false;
 
-		auto handle = thread.native_handle();
-		thread.detach();
-		bool ret = TerminateThread(handle, 0);
+		if (!TerminateThread(thread.native_handle(), 0))
+			return false;
 		
-		return ret;
+		thread.detach();
+		return true;
 	}
 }
 
@@ -239,9 +239,11 @@ void TestRunner::Run(TestContext context, const TestExecutionOptions& options, s
 		auto delta = std::chrono::high_resolution_clock::now().time_since_epoch() - startTime;
 		if (delta >= timeout)
 		{
-			lsn::thread_utils::KillThread(thr);
-			context.SetFailure(std::format("exceeded timeout duration of {}", timeout));
-			break;
+			if (lsn::thread_utils::KillThread(thr))
+			{
+				context.SetFailure(std::format("exceeded timeout duration of {}", timeout));
+				break;
+			}
 		}
 		
 		if (token.stop_requested())
